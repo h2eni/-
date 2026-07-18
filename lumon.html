@@ -1,0 +1,3477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumon [ BETA ] </title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@tiptap/core": "https://esm.sh/@tiptap/core@2.11.5",
+        "@tiptap/starter-kit": "https://esm.sh/@tiptap/starter-kit@2.11.5",
+        "@tiptap/extension-placeholder": "https://esm.sh/@tiptap/extension-placeholder@2.11.5",
+        "@tiptap/extension-task-list": "https://esm.sh/@tiptap/extension-task-list@2.11.5",
+        "@tiptap/extension-task-item": "https://esm.sh/@tiptap/extension-task-item@2.11.5",
+        "@tiptap/extension-code-block-lowlight": "https://esm.sh/@tiptap/extension-code-block-lowlight@2.11.5",
+        "@tiptap/pm/": "https://esm.sh/@tiptap/pm@2.11.5/",
+        "lowlight": "https://esm.sh/lowlight@3.1.0"
+      }
+    }
+  </script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --bg: #151515;
+      --panel: #202020;
+      --panel-soft: #262626;
+      --panel-hover: #303030;
+      --border: #3a3a3a;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --muted-2: #71717a;
+      --blue: #60a5fa;
+      --blue-strong: #3b82f6;
+      --purple: #a78bfa;
+      --green: #22c55e;
+      --green-strong: #16a34a;
+      --red: #ef4444;
+      --yellow: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #191919;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .app {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .topbar {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-orb {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 14px 40px rgba(96, 165, 250, 0.22);
+      font-weight: 800;
+    }
+
+    .brand-title {
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      font-size: 18px;
+    }
+
+    .brand-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(32, 32, 32, 0.74);
+      color: #d4d4d8;
+      font-size: 13px;
+      backdrop-filter: blur(18px);
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+    }
+
+    .shell {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .editor-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(32, 32, 32, 0.76);
+    }
+
+    .crumbs {
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
+
+    .icon-btn {
+      width: 31px;
+      height: 31px;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .icon-btn:hover {
+      background: var(--panel-hover);
+      color: white;
+    }
+
+    .workspace {
+      position: relative;
+      width: min(100%, 760px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 96px 32px 220px;
+    }
+
+    .block-tools {
+      position: fixed;
+      z-index: 60;
+      left: 0;
+      top: 0;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-6px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .block-tools.show,
+    .block-tools:hover {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .block-tool {
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--muted-2);
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .block-tool:hover {
+      background: var(--panel-hover);
+      color: white;
+    }
+
+    .selection-toolbar {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      transform: none;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid rgba(55, 53, 47, 0.16);
+      border-radius: 14px;
+      background: #ffffff;
+      color: #111827;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+      max-width: calc(100vw - 24px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .selection-toolbar.show {
+      display: flex;
+    }
+
+    .selection-toolbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tool-btn {
+      flex: 0 0 auto;
+      min-width: 32px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 8px;
+      background: transparent;
+      color: #111827;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tool-btn:hover {
+      background: #f1f1ef;
+    }
+
+    .tool-ai {
+      background: transparent;
+      border: 0;
+      color: #3f9fa1;
+      font-weight: 700;
+    }
+
+    .divider {
+      flex: 0 0 auto;
+      width: 1px;
+      height: 20px;
+      margin: 0 3px;
+      background: var(--border);
+    }
+
+    .format-select {
+      min-width: 118px;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .editor {
+      outline: none;
+      line-height: 1.72;
+      width: 100%;
+      min-height: 70vh;
+    }
+
+    .editor:focus {
+      outline: none;
+    }
+
+    .editor .ProseMirror {
+      min-height: 70vh;
+      outline: none;
+    }
+
+    .editor .ProseMirror p {
+      margin: 0 0 8px;
+    }
+
+    .editor h1 {
+      margin: 0 0 18px;
+      font-size: clamp(38px, 6vw, 64px);
+      line-height: 0.95;
+      letter-spacing: -0.075em;
+      font-weight: 800;
+    }
+
+    .editor h2 {
+      margin: 36px 0 10px;
+      font-size: 27px;
+      line-height: 1.15;
+      letter-spacing: -0.045em;
+      font-weight: 760;
+    }
+
+    .editor h3 {
+      margin: 28px 0 8px;
+      font-size: 21px;
+      letter-spacing: -0.035em;
+    }
+
+    .editor p {
+      margin: 0 0 15px;
+      color: #d4d4d8;
+      font-size: 16px;
+    }
+
+    .editor ul,
+    .editor ol {
+      margin: 0 0 18px;
+      padding-left: 24px;
+      color: #d4d4d8;
+    }
+
+    .editor ul {
+      list-style: disc;
+    }
+
+    .editor ol {
+      list-style: decimal;
+    }
+
+    .editor li {
+      margin-bottom: 7px;
+    }
+
+    .editor blockquote {
+      margin: 24px 0;
+      padding: 14px 17px;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 13px 13px 0;
+      background: rgba(96, 165, 250, 0.08);
+      color: #dbeafe;
+    }
+
+    .editor code {
+      padding: 2px 5px;
+      border-radius: 6px;
+      background: #0f0f10;
+      border: 1px solid #333;
+      color: #e4e4e7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .editor pre,
+    .editor .notion-code-block {
+      margin: 18px 0;
+      padding: 16px;
+      border: 1px solid #333;
+      border-radius: 10px;
+      background: #111;
+      color: #e4e4e7;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .editor pre code,
+    .editor .notion-code-block code {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    .slash-menu {
+      position: fixed;
+      z-index: 998;
+      left: 0;
+      top: 0;
+      width: 318px;
+      max-height: min(360px, calc(100vh - 24px));
+      display: none;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background: rgba(32, 32, 32, 0.96);
+      box-shadow: 0 24px 74px rgba(0, 0, 0, 0.45);
+      overflow: auto;
+      backdrop-filter: blur(18px);
+    }
+
+    .slash-menu.show {
+      display: block;
+    }
+
+    .slash-label {
+      padding: 7px 9px 5px;
+      color: var(--muted-2);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .slash-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 11px;
+      background: transparent;
+      text-align: left;
+    }
+
+    .slash-item:hover,
+    .slash-item.active {
+      background: var(--panel-hover);
+    }
+
+    .slash-icon {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: #303030;
+      font-weight: 800;
+      color: #f4f4f5;
+    }
+
+    .slash-title {
+      display: block;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .slash-desc {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ai-dock {
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      display: none;
+      transform: none;
+      width: min(720px, calc(100vw - 24px));
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background: rgba(32, 32, 32, 0.96);
+      box-shadow: 0 26px 82px rgba(0, 0, 0, 0.5);
+      overflow: visible;
+      backdrop-filter: blur(20px);
+    }
+
+    .ai-dock::before {
+      content: "---";
+      position: absolute;
+      left: 14px;
+      top: -24px;
+      color: var(--muted-2);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .ai-dock.show {
+      display: block;
+    }
+
+    .ai-top {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(38, 38, 38, 0.72);
+    }
+
+    .ai-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e4e4e7;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .ai-title-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+    }
+
+    .ai-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .multi-edit-preview {
+      display: grid;
+      gap: 8px;
+      max-height: 230px;
+      overflow: auto;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .multi-edit-preview:empty {
+      display: none;
+    }
+
+    .edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 13px;
+      background: var(--panel-soft);
+      color: #d4d4d8;
+      font-size: 13px;
+    }
+
+    .edit-type {
+      flex: 0 0 auto;
+      min-width: 82px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      text-align: center;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+    }
+
+    .type-replace,
+    .type-format {
+      background: rgba(96, 165, 250, 0.16);
+      color: #bfdbfe;
+    }
+
+    .type-insert_after,
+    .type-insert_before {
+      background: rgba(34, 197, 94, 0.16);
+      color: #bbf7d0;
+    }
+
+    .type-remove,
+    .type-error {
+      background: rgba(239, 68, 68, 0.16);
+      color: #fecaca;
+    }
+
+    .edit-copy {
+      flex: 1;
+      min-width: 0;
+      line-height: 1.35;
+      color: #d4d4d8;
+    }
+
+    .edit-rationale {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .accept-row {
+      display: flex;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
+
+    .mini-btn {
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #333;
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mini-btn:hover {
+      background: #3f3f46;
+    }
+
+    .mini-btn.accept {
+      background: var(--green-strong);
+      color: white;
+    }
+
+    .mini-btn.accept:hover {
+      background: #15803d;
+    }
+
+    .composer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .spark {
+      width: 31px;
+      height: 31px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      font-weight: 800;
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    .composer input::placeholder {
+      color: var(--muted);
+    }
+
+    .send {
+      width: 33px;
+      height: 33px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      background: var(--blue-strong);
+      color: white;
+      font-weight: 800;
+    }
+
+    .send:hover {
+      background: #2563eb;
+    }
+
+    .send:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 7px;
+      padding: 0 12px 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .quick-actions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-action {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #262626;
+      border: 1px solid var(--border);
+      color: #e4e4e7;
+      font-size: 12.5px;
+      font-weight: 650;
+    }
+
+    .quick-action:hover {
+      background: #303030;
+    }
+
+    .editor span.diff-added,
+    .editor .ProseMirror span.diff-added {
+      color: #86efac !important;
+      background: rgba(34, 197, 94, 0.24) !important;
+      border: 1px solid rgba(34, 197, 94, 0.45) !important;
+      border-radius: 5px;
+      padding: 1px 4px;
+      text-decoration: none !important;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .editor code span.diff-added,
+    .editor pre span.diff-added,
+    .editor .notion-code-block span.diff-added,
+    .editor .ProseMirror code span.diff-added,
+    .editor .ProseMirror pre span.diff-added,
+    .editor .ProseMirror .notion-code-block span.diff-added {
+      display: inline !important;
+      color: #bbf7d0 !important;
+      background: rgba(34, 197, 94, 0.28) !important;
+      border: 1px solid rgba(34, 197, 94, 0.55) !important;
+      border-radius: 5px;
+      padding: 1px 4px;
+      text-decoration: none !important;
+      font: inherit !important;
+      white-space: pre-wrap;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .slash-menu-placeholder-marker-a {
+      display: none;
+    }
+
+    .editor span.diff-removed,
+    .editor .ProseMirror span.diff-removed {
+      color: #fca5a5 !important;
+      background: rgba(239, 68, 68, 0.22) !important;
+      border: 1px solid rgba(239, 68, 68, 0.45) !important;
+      border-radius: 5px;
+      padding: 1px 4px;
+      text-decoration-line: line-through !important;
+      text-decoration-thickness: 2px !important;
+      text-decoration-color: #ef4444 !important;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .editor code span.diff-removed,
+    .editor pre span.diff-removed,
+    .editor .notion-code-block span.diff-removed,
+    .editor .ProseMirror code span.diff-removed,
+    .editor .ProseMirror pre span.diff-removed,
+    .editor .ProseMirror .notion-code-block span.diff-removed {
+      display: inline !important;
+      color: #fecaca !important;
+      background: rgba(239, 68, 68, 0.26) !important;
+      border: 1px solid rgba(239, 68, 68, 0.55) !important;
+      border-radius: 5px;
+      padding: 1px 4px;
+      text-decoration-line: line-through !important;
+      text-decoration-thickness: 2px !important;
+      text-decoration-color: #ef4444 !important;
+      font: inherit !important;
+      white-space: pre-wrap;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .code-diff-preview {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border: 1px solid rgba(96, 165, 250, 0.28);
+      border-radius: 10px;
+      background: rgba(24, 24, 27, 0.96);
+      color: #d4d4d8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .code-diff-preview-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .code-diff-preview-line {
+      display: block;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .code-diff-preview-line.remove {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.18);
+      text-decoration-line: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: #ef4444;
+    }
+
+    .code-diff-preview-line.add {
+      color: #bbf7d0;
+      background: rgba(34, 197, 94, 0.18);
+    }
+
+    .code-diff-anchor {
+      outline: 1px solid rgba(96, 165, 250, 0.28);
+      outline-offset: 4px;
+    }
+
+    .ProseMirror .code-diff-remove,
+    .ProseMirror .code-diff-add {
+      display: inline !important;
+      border-radius: 5px;
+      padding: 1px 4px;
+      font: inherit !important;
+      white-space: pre-wrap;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .ProseMirror .code-diff-remove {
+      color: #fecaca !important;
+      background: rgba(239, 68, 68, 0.26) !important;
+      border: 1px solid rgba(239, 68, 68, 0.55) !important;
+      text-decoration-line: line-through !important;
+      text-decoration-thickness: 2px !important;
+      text-decoration-color: #ef4444 !important;
+    }
+
+    .ProseMirror .code-diff-add {
+      color: #bbf7d0 !important;
+      background: rgba(34, 197, 94, 0.28) !important;
+      border: 1px solid rgba(34, 197, 94, 0.55) !important;
+      text-decoration: none !important;
+    }
+
+    .diff-preview-active {
+      outline: 1px solid rgba(96, 165, 250, 0.22);
+      border-radius: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 100;
+      max-width: min(420px, calc(100vw - 40px));
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(32, 32, 32, 0.96);
+      color: #e4e4e7;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+      font-size: 13px;
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 24px 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .workspace {
+        min-height: 720px;
+        padding: 66px 25px 245px;
+      }
+
+      .block-tools,
+      .slash-menu {
+        display: none;
+      }
+
+      .selection-toolbar {
+        top: 16px;
+      }
+
+      .ai-dock {
+        width: calc(100% - 24px);
+        max-height: min(72vh, 520px);
+      }
+
+      .ai-dock.keyboard-open {
+        position: fixed;
+        left: 12px !important;
+        right: 12px;
+        width: calc(100vw - 24px);
+        max-height: min(52vh, 420px);
+      }
+
+      .ai-dock.keyboard-open .multi-edit-preview {
+        max-height: 28vh;
+      }
+
+      body.mobile-ai-keyboard-lock {
+        overscroll-behavior: none;
+        touch-action: manipulation;
+      }
+
+      .edit-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .accept-row {
+        width: 100%;
+      }
+
+      .mini-btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-orb">✦</div>
+        <div>
+          <div class="brand-title">Mistral Multi-Edit Lab</div>
+          <div class="brand-subtitle">A Notion-style editor with AI edit plans</div>
+        </div>
+      </div>
+
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="connectionStatus">ready</span>
+      </div>
+    </header>
+
+    <section class="shell">
+      <div class="editor-header">
+        <div class="crumbs">Workspace / Experiments / Mistral AI Editor</div>
+
+        <div class="header-actions">
+          <button class="icon-btn" id="undoBtn" title="Undo">↩</button>
+          <button class="icon-btn" id="redoBtn" title="Redo">↪</button>
+          <button class="icon-btn" title="More">•••</button>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="block-tools">
+          <button class="block-tool" id="addBlockBtn" title="Add block">+</button>
+          <button class="block-tool" id="dragBlockBtn" title="Block menu">⋮⋮</button>
+        </div>
+
+        <div class="selection-toolbar">
+          <button class="tool-btn tool-ai" id="focusAiBtn">✦ Multi-edit</button>
+          <div class="divider"></div>
+          <button class="tool-btn" data-command="bold"><b>B</b></button>
+          <button class="tool-btn" data-command="italic"><i>I</i></button>
+          <button class="tool-btn" data-command="strikeThrough"><s>S</s></button>
+          <button class="tool-btn" id="inlineCodeBtn">&lt;/&gt;</button>
+          <div class="divider"></div>
+          <button class="tool-btn format-select" id="blockFormatBtn">Paragraph ▾</button>
+          <button class="tool-btn" data-command="insertUnorderedList">•</button>
+          <button class="tool-btn" data-command="insertOrderedList">1.</button>
+        </div>
+
+        <article id="editor" class="editor" spellcheck="true">
+          <h1>Designing with edits, not guesses.</h1>
+
+          <p>
+            This editor treats AI suggestions as a stack of deliberate changes.
+            Instead of replacing an entire paragraph, the assistant can make several visible edits
+            that can be reviewed individually.
+          </p>
+
+          <blockquote>
+            Multi-edit mode keeps the human in control: inspect, accept, reject, refine.
+          </blockquote>
+
+          <h2>What changes here</h2>
+
+          <ul>
+            <li>AI suggestions are grouped into multiple precise operations.</li>
+            <li>Each operation has a type: replace, insert, remove, or format.</li>
+            <li>The preview shows every proposed change before it touches the final text.</li>
+            <li>The editor stays lightweight, dark, and focused.</li>
+          </ul>
+        </article>
+
+        <div class="slash-menu">
+          <div class="slash-label">AI blocks</div>
+
+          <button class="slash-item" data-prompt="Improve this writing with a few precise edits.">
+            <span class="slash-icon">✦</span>
+            <span>
+              <span class="slash-title">Ask AI</span>
+              <span class="slash-desc">Generate or edit selected content</span>
+            </span>
+          </button>
+
+          <button class="slash-item" data-prompt="Create a multi-edit plan that makes the selected text clearer.">
+            <span class="slash-icon">⇄</span>
+            <span>
+              <span class="slash-title">Multi-edit plan</span>
+              <span class="slash-desc">Preview several edits before applying</span>
+            </span>
+          </button>
+
+          <button class="slash-item" data-prompt="Review the selected text and suggest concise improvements.">
+            <span class="slash-icon">✓</span>
+            <span>
+              <span class="slash-title">Review changes</span>
+              <span class="slash-desc">Accept or decline each suggestion</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="ai-dock">
+          <div class="ai-top">
+            <div class="ai-title">
+              <span class="ai-title-dot"></span>
+              <span>Mistral multi-edit</span>
+            </div>
+            <div class="ai-meta" id="aiMeta">Select text or edit the full page</div>
+          </div>
+
+          <div id="preview" class="multi-edit-preview"></div>
+
+          <div class="composer">
+            <div class="spark">✦</div>
+            <input id="aiInput" placeholder="Ask Mistral for a multi-edit plan..." />
+            <button id="sendBtn" class="send">↑</button>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-action" data-prompt="Improve the writing while preserving the meaning.">
+              Improve writing
+            </button>
+            <button class="quick-action" data-prompt="Make this shorter and clearer.">
+              Make shorter
+            </button>
+            <button class="quick-action" data-prompt="Make this more professional.">
+              More professional
+            </button>
+            <button class="quick-action" data-prompt="Explain this in simpler language.">
+              Explain simply
+            </button>
+            <button class="quick-action" data-prompt="Fix grammar, spelling, and punctuation only.">
+              Fix grammar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    import { Editor, Mark, Extension, mergeAttributes } from "@tiptap/core";
+    import StarterKit from "@tiptap/starter-kit";
+    import Placeholder from "@tiptap/extension-placeholder";
+    import TaskList from "@tiptap/extension-task-list";
+    import TaskItem from "@tiptap/extension-task-item";
+    import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+    import { createLowlight, all } from "lowlight";
+    import { Plugin, PluginKey } from "@tiptap/pm/state";
+    import { Decoration, DecorationSet } from "@tiptap/pm/view";
+
+    const lowlight = createLowlight(all);
+    const codeDiffPreviewKey = new PluginKey("codeDiffPreview");
+
+    const CodeDiffPreview = Extension.create({
+      name: "codeDiffPreview",
+
+      addProseMirrorPlugins() {
+        return [
+          new Plugin({
+            key: codeDiffPreviewKey,
+            state: {
+              init() {
+                return DecorationSet.empty;
+              },
+              apply(transaction, oldDecorations) {
+                const nextDecorations = transaction.getMeta(codeDiffPreviewKey);
+                if (nextDecorations) return nextDecorations;
+                return oldDecorations.map(transaction.mapping, transaction.doc);
+              }
+            },
+            props: {
+              decorations(state) {
+                return this.getState(state);
+              }
+            }
+          })
+        ];
+      }
+    });
+
+    function clearCodeDiffDecorations() {
+      if (!window.tiptapEditor) return;
+      window.tiptapEditor.view.dispatch(
+        window.tiptapEditor.state.tr.setMeta(codeDiffPreviewKey, DecorationSet.empty)
+      );
+    }
+
+    function setCodeDiffDecorations(decorations) {
+      if (!window.tiptapEditor) return;
+      window.tiptapEditor.view.dispatch(
+        window.tiptapEditor.state.tr.setMeta(
+          codeDiffPreviewKey,
+          DecorationSet.create(window.tiptapEditor.state.doc, decorations)
+        )
+      );
+    }
+
+    const DiffAdded = Mark.create({
+      name: "diffAdded",
+      priority: 1000,
+      inclusive: false,
+      excludes: "",
+
+      addAttributes() {
+        return {
+          diffAction: {
+            default: "add",
+            parseHTML: element => element.getAttribute("data-diff-action") || "add",
+            renderHTML: attributes => ({ "data-diff-action": attributes.diffAction || "add" })
+          },
+          diffIndex: {
+            default: null,
+            parseHTML: element => element.getAttribute("data-diff-index"),
+            renderHTML: attributes => attributes.diffIndex == null ? {} : { "data-diff-index": attributes.diffIndex }
+          },
+          diffPreview: {
+            default: "true",
+            parseHTML: element => element.getAttribute("data-diff-preview") || "true",
+            renderHTML: attributes => ({ "data-diff-preview": attributes.diffPreview || "true" }),
+          },
+          style: {
+            default: null,
+            parseHTML: element => element.getAttribute("style"),
+            renderHTML: attributes => attributes.style ? { style: attributes.style } : {}
+          }
+        };
+      },
+
+      parseHTML() {
+        return [
+          {
+            tag: "span.diff-added",
+            priority: 1000
+          }
+        ];
+      },
+
+      renderHTML({ HTMLAttributes }) {
+        return ["span", mergeAttributes(HTMLAttributes, { class: "diff-added", contenteditable: "false" }), 0];
+      }
+    });
+
+    const DiffRemoved = Mark.create({
+      name: "diffRemoved",
+      priority: 1000,
+      inclusive: false,
+      excludes: "",
+
+      addAttributes() {
+        return {
+          diffAction: {
+            default: "remove",
+            parseHTML: element => element.getAttribute("data-diff-action") || "remove",
+            renderHTML: attributes => ({ "data-diff-action": attributes.diffAction || "remove" })
+          },
+          diffIndex: {
+            default: null,
+            parseHTML: element => element.getAttribute("data-diff-index"),
+            renderHTML: attributes => attributes.diffIndex == null ? {} : { "data-diff-index": attributes.diffIndex }
+          },
+          diffPreview: {
+            default: "true",
+            parseHTML: element => element.getAttribute("data-diff-preview") || "true",
+            renderHTML: attributes => ({ "data-diff-preview": attributes.diffPreview || "true" }),
+          },
+          style: {
+            default: null,
+            parseHTML: element => element.getAttribute("style"),
+            renderHTML: attributes => attributes.style ? { style: attributes.style } : {}
+          }
+        };
+      },
+
+      parseHTML() {
+        return [
+          {
+            tag: "span.diff-removed",
+            priority: 1000
+          }
+        ];
+      },
+
+      renderHTML({ HTMLAttributes }) {
+        return ["span", mergeAttributes(HTMLAttributes, { class: "diff-removed", contenteditable: "false" }), 0];
+      }
+    });
+    /************************************************************
+     * SINGLE-FILE MODE:
+     * This prototype runs entirely in one HTML file.
+     * For local/private testing, paste a Mistral key below or enter it
+     * when prompted. Do not publish this file with a real key inside.
+     ************************************************************/
+
+    const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
+    const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
+    const MISTRAL_MODEL = "mistral-large-latest";
+
+    function getMistralApiKey() {
+      const savedKey = localStorage.getItem("mistral_api_key") || "";
+      const key = DEFAULT_MISTRAL_API_KEY || savedKey;
+
+      if (key) return key;
+
+      const enteredKey = window.prompt("Paste your Mistral API key for this browser. It will be saved in localStorage.");
+      if (!enteredKey) return "";
+
+      localStorage.setItem("mistral_api_key", enteredKey.trim());
+      return enteredKey.trim();
+    }
+
+    const editor = document.getElementById("editor");
+    const preview = document.getElementById("preview");
+    const aiInput = document.getElementById("aiInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const aiMeta = document.getElementById("aiMeta");
+    const connectionStatus = document.getElementById("connectionStatus");
+    const toast = document.getElementById("toast");
+    const workspace = document.querySelector(".workspace");
+    const selectionToolbar = document.querySelector(".selection-toolbar");
+    const aiDock = document.querySelector(".ai-dock");
+    const blockTools = document.querySelector(".block-tools");
+    const addBlockBtn = document.getElementById("addBlockBtn");
+    let activeBlock = null;
+
+    const initialEditorContent = editor.innerHTML;
+    editor.innerHTML = "";
+
+    const tiptapEditor = new Editor({
+      element: editor,
+      extensions: [
+        StarterKit.configure({
+          codeBlock: false,
+          codeBlockLowlight: false
+        }),
+        CodeBlockLowlight.configure({
+          lowlight,
+          defaultLanguage: "plaintext",
+          HTMLAttributes: {
+            class: "notion-code-block"
+          }
+        }),
+        DiffAdded,
+        DiffRemoved,
+        CodeDiffPreview,
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        Placeholder.configure({ placeholder: "Type / for commands, or ask AI below." })
+      ],
+      content: initialEditorContent,
+      editorProps: {
+        attributes: {
+          class: "ProseMirror"
+        }
+      },
+      onUpdate() {
+        aiMeta.textContent = "Editing";
+        debounceSaveHistory();
+      },
+      onSelectionUpdate() {
+        requestAnimationFrame(updateSelectionUI);
+      }
+    });
+
+    window.tiptapEditor = tiptapEditor;
+
+    let pendingEdits = [];
+    let activeDiffs = [];
+    let historyStack = [tiptapEditor.getHTML()];
+    let historyIndex = 0;
+    let chatHistory = [];
+    let savedSelectionRange = null;
+    let savedSelectionRect = null;
+    let savedSelectedHtml = "";
+    let isAiStreaming = false;
+    let lastEditContext = null;
+    const queuedPrompts = [];
+
+    const getDocumentContentsTool = {
+      type: "function",
+      function: {
+        name: "get_document_contents",
+        description:
+          "Read the current editor document when the selected text is too small, ambiguous, or when occurrence disambiguation needs surrounding context.",
+        parameters: {
+          type: "object",
+          properties: {},
+          additionalProperties: false
+        }
+      }
+    };
+
+    const isFollowingUpTool = {
+      type: "function",
+      function: {
+        name: "is_following_up",
+        description:
+          "Check whether the user's prompt should be treated as a follow-up to the current unaccepted preview or the last accepted edit region.",
+        parameters: {
+          type: "object",
+          properties: {
+            reason: {
+              type: "string",
+              description: "Short reason for checking follow-up status."
+            }
+          },
+          additionalProperties: false
+        }
+      }
+    };
+
+    const multiEditTool = {
+      type: "function",
+      function: {
+        name: "multi_edit",
+        description:
+          "Create a precise multi-edit plan. Resolve repeated targets carefully and include occurrence numbers whenever a target appears more than once.",
+        parameters: {
+          type: "object",
+          properties: {
+            summary: {
+              type: "string",
+              description: "Short summary of the planned edit."
+            },
+            edits: {
+              type: "array",
+              description: "Ordered, small edits to preview and optionally apply.",
+              items: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string",
+                    enum: [
+                      "replace",
+                      "insert_after",
+                      "insert_before",
+                      "remove",
+                      "format"
+                    ]
+                  },
+                  target: {
+                    type: "string",
+                    description:
+                      "Exact plain-text substring to find. Use the smallest unique target that safely identifies the intended edit."
+                  },
+                  replacement: {
+                    type: "string",
+                    description: "Replacement text for replace edits."
+                  },
+                  text: {
+                    type: "string",
+                    description: "Inserted text for insert edits."
+                  },
+                  format: {
+                    type: "string",
+                    enum: [
+                      "bold",
+                      "italic",
+                      "code",
+                      "heading_1",
+                      "heading_2",
+                      "quote"
+                    ]
+                  },
+                  occurrence: {
+                    type: "integer",
+                    minimum: 1,
+                    description:
+                      "1-based occurrence of target within the active editing scope. Required when the same target appears more than once. Count from the top of the selected text/document."
+                  },
+                  expectedOccurrenceCount: {
+                    type: "integer",
+                    minimum: 1,
+                    description:
+                      "How many times the exact target appears in the active editing scope. Include this when known so the preview can validate ambiguity."
+                  },
+                  rationale: {
+                    type: "string",
+                    description: "Short reason for this edit, including occurrence context if relevant."
+                  }
+                },
+                required: ["type", "target"]
+              }
+            }
+          },
+          required: ["summary", "edits"]
+        }
+      }
+    };
+
+    function saveHistory() {
+      // Diff previews are temporary UI, not document history.
+      // Never let <del>/<ins> preview markup become an undo step.
+      if (activeDiffs.length || getProseMirrorRoot()?.querySelector("[data-diff-preview='true']")) {
+        return;
+      }
+
+      const current = tiptapEditor.getHTML();
+      if (historyStack[historyIndex] === current) return;
+
+      historyStack = historyStack.slice(0, historyIndex + 1);
+      historyStack.push(current);
+      historyIndex = historyStack.length - 1;
+
+      if (historyStack.length > 80) {
+        historyStack.shift();
+        historyIndex--;
+      }
+    }
+
+    function undo() {
+      if (activeDiffs.length) {
+        declineInlineDiffs();
+        return;
+      }
+
+      if (historyIndex <= 0) return;
+      historyIndex--;
+      hideAIModal({ refocusEditor: false, resetFollowUp: false });
+      tiptapEditor.commands.setContent(historyStack[historyIndex], false);
+      requestAnimationFrame(() => tiptapEditor.commands.focus());
+    }
+
+    function redo() {
+      if (historyIndex >= historyStack.length - 1) return;
+      historyIndex++;
+      hideAIModal({ refocusEditor: false, resetFollowUp: false });
+      tiptapEditor.commands.setContent(historyStack[historyIndex], false);
+      requestAnimationFrame(() => tiptapEditor.commands.focus());
+    }
+
+    document.getElementById("undoBtn").addEventListener("click", undo);
+    document.getElementById("redoBtn").addEventListener("click", redo);
+
+    editor.addEventListener("input", () => {
+      aiMeta.textContent = "Editing";
+      debounceSaveHistory();
+    });
+
+    let historyTimer = null;
+
+    function debounceSaveHistory() {
+      clearTimeout(historyTimer);
+      historyTimer = setTimeout(saveHistory, 350);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3200);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function getSelectedText() {
+      const selection = window.getSelection();
+
+      if (
+        selection &&
+        !selection.isCollapsed &&
+        editor.contains(selection.anchorNode) &&
+        editor.contains(selection.focusNode)
+      ) {
+        return selection.toString();
+      }
+
+      return editor.innerText.trim();
+    }
+
+    function getSelectedOrAllHtml() {
+      const selection = window.getSelection();
+
+      if (
+        selection &&
+        !selection.isCollapsed &&
+        editor.contains(selection.anchorNode) &&
+        editor.contains(selection.focusNode)
+      ) {
+        const range = selection.getRangeAt(0);
+        const wrapper = document.createElement("div");
+        wrapper.appendChild(range.cloneContents());
+        return wrapper.innerHTML;
+      }
+
+      return editor.innerHTML;
+    }
+
+    function isEditorSelection(selection = window.getSelection()) {
+      return Boolean(
+        selection &&
+          !selection.isCollapsed &&
+          selection.rangeCount &&
+          editor.contains(selection.anchorNode) &&
+          editor.contains(selection.focusNode)
+      );
+    }
+
+    function getSelectionRect(range) {
+      const rects = Array.from(range.getClientRects()).filter(rect => rect.width || rect.height);
+      return rects[0] || range.getBoundingClientRect();
+    }
+
+    function saveCurrentSelection() {
+      const selection = window.getSelection();
+      if (!isEditorSelection(selection)) return false;
+
+      const range = selection.getRangeAt(0).cloneRange();
+      const wrapper = document.createElement("div");
+      wrapper.appendChild(range.cloneContents());
+
+      savedSelectionRange = range;
+      savedSelectionRect = getSelectionRect(range);
+      savedSelectedHtml = wrapper.innerHTML;
+      return true;
+    }
+
+    function restoreSavedSelection() {
+      if (!savedSelectionRange) return false;
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(savedSelectionRange);
+      return true;
+    }
+
+    function getActiveSelectedText() {
+      if (isEditorSelection()) return window.getSelection().toString().trim();
+      return savedSelectionRange?.toString().trim() || "";
+    }
+
+    function getActiveSelectedHtml() {
+      if (isEditorSelection()) {
+        const range = window.getSelection().getRangeAt(0);
+        const wrapper = document.createElement("div");
+        wrapper.appendChild(range.cloneContents());
+        return wrapper.innerHTML;
+      }
+      return savedSelectedHtml;
+    }
+
+    function placeFloatingToolbar(rect) {
+      if (!rect || !selectionToolbar) return;
+
+      selectionToolbar.classList.add("show");
+      const toolbarRect = selectionToolbar.getBoundingClientRect();
+      const gap = 10;
+      const x = Math.max(
+        12,
+        Math.min(
+          rect.left + rect.width / 2 - toolbarRect.width / 2,
+          window.innerWidth - toolbarRect.width - 12
+        )
+      );
+      const yAbove = rect.top - toolbarRect.height - gap;
+      const yBelow = rect.bottom + gap;
+      const y = yAbove > 12 ? yAbove : yBelow;
+
+      selectionToolbar.style.left = `${x}px`;
+      selectionToolbar.style.top = `${y}px`;
+    }
+
+    function hideSelectionToolbar() {
+      selectionToolbar?.classList.remove("show");
+    }
+
+    function resetFollowUpState() {
+      lastEditContext = null;
+      activeDiffs = [];
+      pendingEdits = [];
+      queuedPrompts.length = 0;
+    }
+
+    function hideAIModal({ refocusEditor = false, resetFollowUp = true } = {}) {
+      aiDock?.classList.remove("show", "keyboard-open");
+      setMobileFocusScrollLock(false);
+      preview.innerHTML = "";
+
+      // Closing the AI modal ends the edit session. After this,
+      // is_following_up returns "no" and reports 0 edits made.
+      if (resetFollowUp) {
+        resetFollowUpState();
+      }
+
+      if (refocusEditor) {
+        requestAnimationFrame(() => {
+          tiptapEditor.commands.focus();
+        });
+      }
+    }
+
+    function getSelectedBlockFormat() {
+      const selection = window.getSelection();
+      if (!isEditorSelection(selection)) return "Paragraph";
+      const node =
+        selection.anchorNode?.nodeType === Node.TEXT_NODE
+          ? selection.anchorNode.parentElement
+          : selection.anchorNode;
+      const block = node?.closest?.("h1, h2, h3, p, li, blockquote, pre");
+      const tag = block?.tagName?.toLowerCase();
+
+      if (tag === "h1") return "Header";
+      if (tag === "h2") return "Header 2";
+      if (tag === "h3") return "Header 3";
+      if (tag === "li") return "List";
+      if (tag === "blockquote") return "Quote";
+      if (tag === "pre") return "Code";
+      return "Paragraph";
+    }
+
+    function updateBlockFormatLabel() {
+      const button = document.getElementById("blockFormatBtn");
+      if (!button) return;
+      button.textContent = `${getSelectedBlockFormat()} ▾`;
+    }
+
+    function updateSelectionUI() {
+      const selection = window.getSelection();
+
+      if (!isEditorSelection(selection)) {
+        hideSelectionToolbar();
+        return;
+      }
+
+      saveCurrentSelection();
+      updateBlockFormatLabel();
+      placeFloatingToolbar(savedSelectionRect);
+      aiMeta.textContent = `${getActiveSelectedText().length} selected characters`;
+    }
+
+    function isTouchDevice() {
+      return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+    }
+
+    function getVisualViewportMetrics() {
+      const viewport = window.visualViewport;
+
+      if (!viewport) {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          keyboardHeight: 0,
+          keyboardOpen: false
+        };
+      }
+
+      const keyboardHeight = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop
+      );
+
+      return {
+        top: viewport.offsetTop,
+        left: viewport.offsetLeft,
+        width: viewport.width,
+        height: viewport.height,
+        keyboardHeight,
+        keyboardOpen: isTouchDevice() && keyboardHeight > 80
+      };
+    }
+
+    function setMobileFocusScrollLock(enabled) {
+      document.body.classList.toggle("mobile-ai-keyboard-lock", enabled);
+      document.documentElement.style.overscrollBehavior = enabled ? "none" : "";
+      document.body.style.overscrollBehavior = enabled ? "none" : "";
+    }
+
+    function positionAIModal() {
+      if (!aiDock?.classList.contains("show")) return;
+
+      const viewport = getVisualViewportMetrics();
+      const dockRect = aiDock.getBoundingClientRect();
+      const gap = 10;
+
+      if (viewport.keyboardOpen) {
+        aiDock.classList.add("keyboard-open");
+        setMobileFocusScrollLock(true);
+
+        const x = Math.max(12, viewport.left + 12);
+        const y = Math.max(
+          viewport.top + 12,
+          viewport.top + viewport.height - dockRect.height - gap
+        );
+
+        aiDock.style.left = `${x}px`;
+        aiDock.style.top = `${y}px`;
+        return;
+      }
+
+      aiDock.classList.remove("keyboard-open");
+      setMobileFocusScrollLock(false);
+
+      const anchorRect = savedSelectionRect || getCaretRect();
+      if (!anchorRect) return;
+
+      const x = Math.max(
+        viewport.left + 12,
+        Math.min(
+          anchorRect.left,
+          viewport.left + viewport.width - dockRect.width - 12
+        )
+      );
+
+      const below = anchorRect.bottom + 34;
+      const above = anchorRect.top - dockRect.height - 34;
+      const y = below + dockRect.height < viewport.top + viewport.height - 12
+        ? below
+        : Math.max(viewport.top + 12, above);
+
+      aiDock.style.left = `${x}px`;
+      aiDock.style.top = `${y}px`;
+    }
+
+    function showAIModalForSelection() {
+      const wasOpen = Boolean(aiDock?.classList.contains("show"));
+
+      // Reopening the AI modal starts a clean edit session.
+      // Follow-up state only survives while the modal stays open.
+      if (!wasOpen) {
+        resetFollowUpState();
+      }
+
+      if (!saveCurrentSelection() && !savedSelectionRange) {
+        hideSelectionToolbar();
+        hideAIModal();
+        showToast("Select text first, then press Multi-edit.");
+        return;
+      }
+
+      restoreSavedSelection();
+      hideSelectionToolbar();
+      aiDock.classList.add("show");
+
+      positionAIModal();
+
+      requestAnimationFrame(() => {
+        aiInput.focus({ preventScroll: true });
+        positionAIModal();
+      });
+    }
+
+    function getDocumentContents() {
+      return {
+        text: tiptapEditor.getText(),
+        html: tiptapEditor.getHTML()
+      };
+    }
+
+    function getDocTextBetween(from, to) {
+      const doc = tiptapEditor?.state?.doc;
+      if (!doc || from == null || to == null) return "";
+
+      const safeFrom = Math.max(0, Math.min(Number(from) || 0, doc.content.size));
+      const safeTo = Math.max(safeFrom, Math.min(Number(to) || 0, doc.content.size));
+
+      if (safeFrom >= safeTo) return "";
+
+      try {
+        return doc.textBetween(safeFrom, safeTo, "\n");
+      } catch (error) {
+        console.warn("Could not read document text range", { from, to, safeFrom, safeTo, error });
+        return "";
+      }
+    }
+
+    function getCurrentSelectionRange() {
+      const { from, to } = tiptapEditor.state.selection;
+      return from === to ? null : { from, to };
+    }
+
+    function captureLastEditContext({ instruction, selectedText, selectedHtml }) {
+      const range = getCurrentSelectionRange();
+      if (!range || !selectedText) return;
+
+      lastEditContext = {
+        ...range,
+        originalInstruction: instruction,
+        originalSelectedText: selectedText,
+        originalSelectedHtml: selectedHtml,
+        latestText: selectedText,
+        latestHtml: selectedHtml,
+        acceptedEdits: [],
+        updatedAt: Date.now()
+      };
+    }
+
+    function getPreviewTextAfterEdits(baseText, edits = activeDiffs) {
+      let result = String(baseText || "");
+      const ordered = [...edits]
+        .filter(edit => edit.target)
+        .sort((a, b) => (b.docFrom ?? 0) - (a.docFrom ?? 0));
+
+      ordered.forEach(edit => {
+        const occurrence = edit.occurrence || 1;
+        let seen = 0;
+        let at = -1;
+        let from = 0;
+
+        while (from <= result.length) {
+          const next = result.indexOf(edit.target, from);
+          if (next === -1) break;
+          seen += 1;
+          if (seen === occurrence) {
+            at = next;
+            break;
+          }
+          from = next + edit.target.length;
+        }
+
+        if (at === -1) return;
+
+        const before = result.slice(0, at);
+        const matched = result.slice(at, at + edit.target.length);
+        const after = result.slice(at + edit.target.length);
+
+        if (edit.type === "replace") {
+          result = before + (edit.replacement || "") + after;
+        } else if (edit.type === "remove") {
+          result = before + after;
+        } else if (edit.type === "insert_before") {
+          result = before + (edit.insertText || "") + matched + after;
+        } else if (edit.type === "insert_after") {
+          result = before + matched + (edit.insertText || "") + after;
+        }
+      });
+
+      return result;
+    }
+
+    function hasUnacceptedPreviewEdits() {
+      return activeDiffs.length > 0 || pendingEdits.length > 0;
+    }
+
+    function getEditActionSummary(edit) {
+      if (!edit) return "Unknown edit";
+
+      if (edit.type === "replace") {
+        return `Replaced "${edit.target || ""}" with "${edit.replacement || ""}"`;
+      }
+
+      if (edit.type === "insert_before") {
+        return `Inserted "${edit.insertText || edit.text || ""}" before "${edit.target || ""}"`;
+      }
+
+      if (edit.type === "insert_after") {
+        return `Inserted "${edit.insertText || edit.text || ""}" after "${edit.target || ""}"`;
+      }
+
+      if (edit.type === "remove") {
+        return `Removed "${edit.target || ""}"`;
+      }
+
+      if (edit.type === "format") {
+        return `Formatted "${edit.target || ""}" as ${edit.format || "format"}`;
+      }
+
+      return `${edit.type || "Edited"} "${edit.target || ""}"`;
+    }
+
+    function getPreviousEditActions() {
+      const accepted = lastEditContext?.acceptedEdits || [];
+      const preview = activeDiffs.map(({ decorations, ...edit }) => ({
+        ...edit,
+        status: "preview_unaccepted"
+      }));
+
+      return [
+        ...accepted.map(edit => ({ ...edit, status: "accepted" })),
+        ...preview
+      ];
+    }
+
+    function getFollowUpStatus(instruction = "", { includeContext = true } = {}) {
+      const previousActions = getPreviousEditActions();
+      const editsMade = previousActions.length;
+      const hasOpenModal = Boolean(aiDock?.classList.contains("show"));
+      const yes = hasOpenModal && editsMade > 0;
+
+      return {
+        isFollowingUp: yes ? "yes" : "no",
+        editsMade: yes ? editsMade : 0,
+        hasUnacceptedPreviewEdits: yes ? hasUnacceptedPreviewEdits() : false,
+        previousActions: yes ? previousActions.map((edit, index) => ({
+          index: index + 1,
+          status: edit.status || "accepted",
+          type: edit.type,
+          target: edit.target,
+          replacement: edit.replacement,
+          text: edit.insertText || edit.text,
+          occurrence: edit.occurrence || 1,
+          summary: getEditActionSummary(edit)
+        })) : [],
+        continuationContext: yes && includeContext ? buildContinuationContext() : "(none)",
+        reason: yes
+          ? "Prompt was sent after edits were made in the current AI modal session."
+          : "No edits have been made in the current AI modal session."
+      };
+    }
+
+    function isFollowingUpAfterEdit(instruction = "") {
+      return getFollowUpStatus(instruction, { includeContext: false }).isFollowingUp === "yes";
+    }
+
+    function getLastEditScope() {
+      if (!lastEditContext) return null;
+
+      const latestText = getDocTextBetween(lastEditContext.from, lastEditContext.to);
+      if (!latestText) return null;
+
+      const previewText = hasUnacceptedPreviewEdits()
+        ? getPreviewTextAfterEdits(latestText)
+        : latestText;
+
+      lastEditContext.latestText = previewText;
+      lastEditContext.updatedAt = Date.now();
+
+      return {
+        selectedText: previewText,
+        selectedHtml: lastEditContext.latestHtml || tiptapEditor.getHTML(),
+        scopeLabel: hasUnacceptedPreviewEdits()
+          ? "Continuing unaccepted preview"
+          : "Continuing last edited region",
+        isContinuation: true
+      };
+    }
+
+    function shouldUseLastEditContext(instruction) {
+      return isFollowingUpAfterEdit(instruction);
+    }
+
+    function buildContinuationContext() {
+      if (!lastEditContext && !hasUnacceptedPreviewEdits()) return "(none)";
+
+      const currentRegion = getLastEditScope()?.selectedText || "";
+      const previewEdits = activeDiffs.map(({ decorations, ...edit }) => edit);
+
+      return [
+        "Continuation context:",
+        "The user may be asking to continue/refine existing AI edits.",
+        "Important: unaccepted preview edits count as proposed current text even though they are not committed in the document yet.",
+        "",
+        "Is following up:",
+        getFollowUpStatus("", { includeContext: false }).isFollowingUp,
+        "",
+        "Original selected text:",
+        lastEditContext?.originalSelectedText || "",
+        "",
+        "Current region including unaccepted preview edits:",
+        currentRegion,
+        "",
+        "Unaccepted preview edits:",
+        JSON.stringify(previewEdits),
+        "",
+        "Accepted edits so far:",
+        JSON.stringify(lastEditContext?.acceptedEdits || [])
+      ].join("\n");
+    }
+
+    function renderStreamingStatus({ text = "", tools = [] } = {}) {
+      const toolList = tools.length
+        ? tools.map(name => `<span class="edit-rationale">Tool executed: ${escapeHtml(name)}</span>`).join("")
+        : `<span class="edit-rationale">Waiting for streamed tool calls…</span>`;
+
+      preview.innerHTML = `<br>        <div class="edit-row"><br>          <span class="edit-type type-format">stream</span><br>          <span class="edit-copy"><br>            ${escapeHtml(text || "Streaming Mistral response…")}<br>            ${toolList}<br>          </span><br>        </div><br>      `;
+    }
+
+    async function readMistralStream(response, { onDelta, onToolCall }) {
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("This browser does not support response streaming.");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      const assistantMessage = {
+        role: "assistant",
+        content: "",
+        tool_calls: []
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+
+        for (const event of events) {
+          const dataLines = event
+            .split("\n")
+            .filter(line => line.startsWith("data:"))
+            .map(line => line.slice(5).trim());
+
+          for (const dataLine of dataLines) {
+            if (!dataLine || dataLine === "[DONE]") continue;
+
+            const payload = JSON.parse(dataLine);
+            const delta = payload.choices?.[0]?.delta || {};
+
+            if (delta.content) {
+              assistantMessage.content += delta.content;
+              onDelta?.(assistantMessage.content);
+            }
+
+            (delta.tool_calls || []).forEach(part => {
+              const index = part.index ?? 0;
+              const existing = assistantMessage.tool_calls[index] || {
+                id: part.id || "",
+                type: "function",
+                function: {
+                  name: "",
+                  arguments: ""
+                }
+              };
+
+              if (part.id) existing.id = part.id;
+              if (part.type) existing.type = part.type;
+              if (part.function?.name) existing.function.name += part.function.name;
+              if (part.function?.arguments) existing.function.arguments += part.function.arguments;
+
+              assistantMessage.tool_calls[index] = existing;
+
+              if (existing.function.name) {
+                onToolCall?.(existing.function.name, existing);
+              }
+            });
+          }
+        }
+      }
+
+      return assistantMessage;
+    }
+
+    async function askMistralForMultiEdit({ selectedText, selectedHtml, instruction, continuationContext = "(none)" }) {
+      const mistralApiKey = getMistralApiKey();
+
+      if (!mistralApiKey) {
+        throw new Error("Add a Mistral API key to use AI edits in this single-file prototype.");
+      }
+
+      const executedTools = [];
+      const messages = [
+        ...chatHistory.slice(-6),
+        {
+          role: "system",
+          content: [
+            "You are a careful inline document editor.",
+            "Use tools only; return the final edit plan with multi_edit.",
+            "Create small, precise, reviewable edits. Never rewrite the whole text unless explicitly asked.",
+            "Every target must be an exact plain-text substring of the active editing scope.",
+            "Before editing a repeated or generic target, disambiguate it. If selected context is insufficient, call get_document_contents.",
+            "If the user appears to be following up on existing edits, call is_following_up or use the provided follow-up context before planning.",
+            "Treat unaccepted preview edits as part of the current proposed text when the user is following up.",
+            "Critical: unaccepted preview edits are not committed document text. If revising a pending replacement, return an edit that targets the original document substring and replaces it with the fully revised proposed text.",
+            "If a target appears more than once, include occurrence and expectedOccurrenceCount. Count occurrences from top to bottom in the active scope.",
+            "Prefer a longer unique target over a fragile occurrence number when it reads naturally and avoids ambiguity.",
+            "Do not guess occurrence numbers. If uncertain, inspect the full document first.",
+            "Never set the occurrence number to 0 when making changes, such as specifying occurrences.",
+            "Preserve meaning unless the instruction asks for a transformation.",
+            "Do not output HTML in edit fields.",
+            "Use format edits only when formatting is requested or clearly helpful.",
+            "Keep rationale short and mention occurrence context when useful."
+          ].join(" ")
+        },
+        {
+          role: "user",
+          content: [
+            `Instruction: ${instruction}`,
+            "",
+            "Active selected plain text:",
+            selectedText,
+            "",
+            "Active selection HTML, for formatting context only:",
+            selectedHtml || "(none)",
+            "",
+            "Follow-up context:",
+            continuationContext,
+            "",
+            "If this selection is incomplete or ambiguous, call get_document_contents before planning edits."
+          ].join("\n")
+        }
+      ];
+
+      renderStreamingStatus({ text: "Streaming Mistral response…", tools: executedTools });
+
+      for (let step = 0; step < 4; step++) {
+        const response = await fetch(MISTRAL_ENDPOINT, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${mistralApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: MISTRAL_MODEL,
+            temperature: 0.15,
+            stream: true,
+            tools: [getDocumentContentsTool, isFollowingUpTool, multiEditTool],
+            tool_choice: "auto",
+            messages
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Mistral API error ${response.status}: ${errorText}`);
+        }
+
+        const assistantMessage = await readMistralStream(response, {
+          onDelta(content) {
+            renderStreamingStatus({
+              text: content || "Streaming Mistral response…",
+              tools: executedTools
+            });
+          },
+          onToolCall(name) {
+            if (!executedTools.includes(name)) executedTools.push(name);
+            renderStreamingStatus({
+              text: `Streaming tool call: ${name}`,
+              tools: executedTools
+            });
+          }
+        });
+
+        messages.push(assistantMessage);
+
+        const toolCalls = assistantMessage.tool_calls || [];
+        const multiEditCall = toolCalls.find(call => call.function?.name === "multi_edit");
+
+        if (multiEditCall?.function?.arguments) {
+          if (!executedTools.includes("multi_edit")) executedTools.push("multi_edit");
+          renderStreamingStatus({ text: "Received multi-edit plan.", tools: executedTools });
+
+          const result = JSON.parse(multiEditCall.function.arguments);
+
+          chatHistory.push({
+            role: "assistant",
+            content: assistantMessage.content || "",
+            tool_calls: toolCalls
+          });
+
+          chatHistory.push({
+            role: "tool",
+            tool_call_id: multiEditCall.id,
+            name: "multi_edit",
+            content: JSON.stringify(result)
+          });
+
+          console.log("AI conversation stream:", chatHistory);
+          return result;
+        }
+
+        if (!toolCalls.length) {
+          throw new Error("Mistral did not return a multi_edit tool call.");
+        }
+
+        toolCalls.forEach(toolCall => {
+          const toolName = toolCall.function?.name || "unknown_tool";
+          if (!executedTools.includes(toolName)) executedTools.push(toolName);
+
+          if (toolName === "get_document_contents") {
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: "get_document_contents",
+              content: JSON.stringify(getDocumentContents())
+            });
+          } else if (toolName === "is_following_up") {
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: "is_following_up",
+              content: JSON.stringify(getFollowUpStatus(instruction))
+            });
+          } else {
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: toolName,
+              content: JSON.stringify({ error: "Unsupported tool. Use get_document_contents, is_following_up, or multi_edit." })
+            });
+          }
+        });
+
+        renderStreamingStatus({
+          text: "Tool results added. Continuing stream…",
+          tools: executedTools
+        });
+      }
+
+      throw new Error("Mistral did not finish a multi_edit plan after reading context.");
+    }
+
+    function describeEdit(edit) {
+      if (!edit) return "Suggested edit";
+
+      if (edit.type === "replace") {
+        return `Replace “${edit.target}” with “${edit.replacement || ""}”`;
+      }
+
+      if (edit.type === "insert_after") {
+        return `Insert after “${edit.target}”: “${edit.text || ""}”`;
+      }
+
+      if (edit.type === "insert_before") {
+        return `Insert before “${edit.target}”: “${edit.text || ""}”`;
+      }
+
+      if (edit.type === "remove") {
+        return `Remove “${edit.target}”`;
+      }
+
+      if (edit.type === "format") {
+        return `Apply ${edit.format || "formatting"} to “${edit.target}”`;
+      }
+
+      return "Suggested edit";
+    }
+
+    function revisePendingReplacementText(text, edit) {
+      const source = String(text || "");
+      const target = String(edit?.target || "");
+      if (!target || !source.includes(target)) return null;
+
+      if (edit.type === "replace") {
+        return source.replace(target, edit.replacement || "");
+      }
+
+      if (edit.type === "remove") {
+        return source.replace(target, "");
+      }
+
+      if (edit.type === "insert_before") {
+        return source.replace(target, `${edit.text || edit.insertText || ""}${target}`);
+      }
+
+      if (edit.type === "insert_after") {
+        return source.replace(target, `${target}${edit.text || edit.insertText || ""}`);
+      }
+
+      return null;
+    }
+
+    function retargetFollowUpEditsToPendingPreviews(plan) {
+      if (!hasUnacceptedPreviewEdits() || !Array.isArray(plan?.edits)) return plan;
+
+      const previewEdits = activeDiffs.map(({ decorations, ...edit }) => edit);
+      const transformedEdits = [];
+      const consumedFollowUpIndexes = new Set();
+
+      previewEdits.forEach(previewEdit => {
+        if (previewEdit.type !== "replace") return;
+
+        let replacement = previewEdit.replacement || "";
+        const appliedFollowUps = [];
+
+        plan.edits.forEach((edit, index) => {
+          if (consumedFollowUpIndexes.has(index)) return;
+
+          const revisedReplacement = revisePendingReplacementText(replacement, edit);
+          if (revisedReplacement == null) return;
+
+          replacement = revisedReplacement;
+          consumedFollowUpIndexes.add(index);
+          appliedFollowUps.push({
+            type: edit.type,
+            target: edit.target,
+            replacement: edit.replacement,
+            text: edit.text || edit.insertText,
+            occurrence: edit.occurrence || 1
+          });
+        });
+
+        if (!appliedFollowUps.length) return;
+
+        transformedEdits.push({
+          type: "replace",
+          target: previewEdit.target,
+          replacement,
+          occurrence: previewEdit.occurrence || 1,
+          expectedOccurrenceCount: previewEdit.occurrenceCount || previewEdit.expectedOccurrenceCount,
+          rationale:
+            "Revised an unaccepted preview edit so the follow-up targets the original document text precisely.",
+          supersedesPreview: previewEdit.index,
+          appliedFollowUps
+        });
+      });
+
+      plan.edits.forEach((edit, index) => {
+        if (!consumedFollowUpIndexes.has(index)) transformedEdits.push(edit);
+      });
+
+      if (!transformedEdits.length) return plan;
+
+      return {
+        ...plan,
+        summary: `${plan.summary || "Follow-up edit"} — retargeted to pending preview`,
+        edits: transformedEdits
+      };
+    }
+
+    function renderEditPreview(plan) {
+      plan = retargetFollowUpEditsToPendingPreviews(plan);
+
+      clearInlineDiffs({ keepModalOpen: true });
+      aiDock?.classList.add("show");
+
+      pendingEdits = Array.isArray(plan.edits) ? plan.edits : [];
+      preview.innerHTML = "";
+
+      aiMeta.textContent = plan.summary || `${pendingEdits.length} inline suggestions`;
+
+      if (!pendingEdits.length) {
+        preview.innerHTML = `
+          <div class="edit-row">
+            <span class="edit-type type-error">empty</span>
+            <span class="edit-copy">Mistral returned no edits.</span>
+          </div>
+        `;
+        return;
+      }
+
+      let shown = 0;
+      const failedEdits = [];
+
+      pendingEdits.forEach((edit, index) => {
+        if (previewInlineDiff(edit, index)) {
+          shown++;
+        } else {
+          failedEdits.push({
+            index,
+            type: edit?.type,
+            target: edit?.target,
+            occurrence: edit?.occurrence || 1,
+            expectedOccurrenceCount: edit?.expectedOccurrenceCount,
+            actualOccurrenceCount: edit?.target ? countTextOccurrences(edit.target) : 0,
+            targetLength: edit?.target?.length || 0
+          });
+        }
+      });
+
+      if (failedEdits.length) {
+        console.warn("Multi-edit preview match failures", failedEdits);
+      }
+
+      preview.innerHTML = `
+        <div class="edit-row">
+          <span class="edit-type type-format">diff</span>
+          <span class="edit-copy">
+            Inline diff preview is shown directly inside the document.
+            <span class="edit-rationale">Green additions and red removals use span diff tokens. Code blocks use a stable preview card when ProseMirror strips inline spans.</span>
+          </span>
+          <span class="accept-row">
+            <button class="mini-btn accept" id="acceptAllDiffs">Accept</button>
+            <button class="mini-btn" id="declineAllDiffs">Decline</button>
+          </span>
+        </div>
+      `;
+
+      if (!shown) {
+        aiMeta.textContent = "No matching targets found";
+        const details = failedEdits
+          .map(edit => `#${edit.index + 1}: ${edit.type || "edit"} target occurrences=${edit.actualOccurrenceCount}, requested occurrence=${edit.occurrence}`)
+          .join(" | ");
+        showToast("No edits matched. The modal will stay open; see console for diagnostics.");
+        console.warn("Mistral returned edits, but none matched the current document text.", details);
+        aiDock?.classList.add("show");
+        requestAnimationFrame(() => {
+          aiInput.focus({ preventScroll: true });
+          positionAIModal();
+        });
+      }
+
+      document.getElementById("acceptAllDiffs").addEventListener("click", acceptInlineDiffs);
+      document.getElementById("declineAllDiffs").addEventListener("click", declineInlineDiffs);
+    }
+
+    function renderError(message) {
+      preview.innerHTML = `
+        <div class="edit-row">
+          <span class="edit-type type-error">error</span>
+          <span class="edit-copy">${escapeHtml(message)}</span>
+        </div>
+      `;
+    }
+
+    function getPromptScope(instruction) {
+      restoreSavedSelection();
+
+      const selectedText = getActiveSelectedText();
+      const selectedHtml = getActiveSelectedHtml();
+
+      if (shouldUseLastEditContext(instruction)) {
+        const lastScope = getLastEditScope();
+        if (lastScope?.selectedText) return lastScope;
+      }
+
+      if (selectedText) {
+        return {
+          selectedText,
+          selectedHtml,
+          scopeLabel: `${selectedText.length} selected characters`,
+          isContinuation: false
+        };
+      }
+
+      // Follow-up prompts should still work while the modal is open, even if
+      // focus moved from the editor into the composer and the browser selection
+      // disappeared. If no last edited region exists, fall back to the full document.
+      return {
+        selectedText: tiptapEditor.getText(),
+        selectedHtml: tiptapEditor.getHTML(),
+        scopeLabel: "Full document follow-up",
+        isContinuation: false
+      };
+    }
+
+    function enqueueAiPrompt(prompt) {
+      const instruction = prompt.trim();
+      if (!instruction) return;
+
+      queuedPrompts.push(instruction);
+      aiDock?.classList.add("show");
+      showToast("Queued follow-up prompt.");
+      renderStreamingStatus({
+        text: `Queued ${queuedPrompts.length} follow-up prompt${queuedPrompts.length === 1 ? "" : "s"}…`,
+        tools: []
+      });
+    }
+
+    async function runNextQueuedPrompt() {
+      if (isAiStreaming || !queuedPrompts.length) return;
+
+      const nextPrompt = queuedPrompts.shift();
+      await runAiPrompt(nextPrompt);
+    }
+
+    async function runAiPrompt(prompt) {
+      const instruction = prompt.trim();
+      if (!instruction) return;
+
+      if (isAiStreaming) {
+        enqueueAiPrompt(instruction);
+        return;
+      }
+
+      const { selectedText, selectedHtml, scopeLabel, isContinuation } = getPromptScope(instruction);
+
+      if (!selectedText) {
+        aiDock?.classList.add("show");
+        showToast("There is no document text to edit yet.");
+        return;
+      }
+
+      isAiStreaming = true;
+      sendBtn.disabled = false;
+      connectionStatus.textContent = "thinking";
+      aiMeta.textContent = scopeLabel;
+      preview.innerHTML = `
+        <div class="edit-row">
+          <span class="edit-type type-format">AI</span>
+          <span class="edit-copy">Thinking through a multi-edit plan…</span>
+        </div>
+      `;
+
+      try {
+        if (!isContinuation) {
+          captureLastEditContext({ instruction, selectedText, selectedHtml });
+        }
+
+        const plan = await askMistralForMultiEdit({
+          selectedText,
+          selectedHtml,
+          instruction,
+          continuationContext: isContinuation ? buildContinuationContext() : "(none)"
+        });
+
+        saveHistory();
+        renderEditPreview(plan);
+        connectionStatus.textContent = "ready";
+      } catch (error) {
+        console.error(error);
+        renderError(error.message);
+        connectionStatus.textContent = "error";
+      } finally {
+        isAiStreaming = false;
+        sendBtn.disabled = false;
+        runNextQueuedPrompt();
+      }
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const prompt = aiInput.value;
+      aiInput.value = "";
+      runAiPrompt(prompt);
+    });
+
+    aiInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        const prompt = aiInput.value;
+        aiInput.value = "";
+        runAiPrompt(prompt);
+      }
+    });
+
+    document.querySelectorAll(".quick-action").forEach(button => {
+      button.addEventListener("click", () => {
+        runAiPrompt(button.dataset.prompt || button.textContent);
+      });
+    });
+
+    const slashMenu = document.querySelector(".slash-menu");
+    const slashItems = Array.from(document.querySelectorAll(".slash-item"));
+    let slashMenuOpen = false;
+    let slashQuery = "";
+    let slashIndex = 0;
+
+    const slashCommands = [
+      {
+        aliases: ["ai", "ask", "assistant"],
+        title: "Ask AI",
+        run() {
+          hideSlashMenu();
+          showAIModalForSelection();
+        }
+      },
+      {
+        aliases: ["multi", "edit", "multi edit"],
+        title: "Multi-edit plan",
+        run() {
+          hideSlashMenu();
+          showAIModalForSelection();
+        }
+      },
+      {
+        aliases: ["h1", "header 1", "heading 1", "title"],
+        title: "Header 1",
+        run() {
+          applySlashFormat("h1");
+        }
+      },
+      {
+        aliases: ["h2", "header 2", "heading 2"],
+        title: "Header 2",
+        run() {
+          applySlashFormat("h2");
+        }
+      },
+      {
+        aliases: ["h3", "header 3", "heading 3"],
+        title: "Header 3",
+        run() {
+          applySlashFormat("h3");
+        }
+      },
+      {
+        aliases: ["paragraph", "text", "p"],
+        title: "Paragraph",
+        run() {
+          applySlashFormat("p");
+        }
+      },
+      {
+        aliases: ["bullet", "bulleted list", "list"],
+        title: "Bulleted list",
+        run() {
+          hideSlashMenu();
+          removeSlashQuery();
+          tiptapEditor.chain().focus().toggleBulletList().run();
+          saveHistory();
+        }
+      },
+      {
+        aliases: ["number", "numbered list", "ordered list"],
+        title: "Numbered list",
+        run() {
+          hideSlashMenu();
+          removeSlashQuery();
+          tiptapEditor.chain().focus().toggleOrderedList().run();
+          saveHistory();
+        }
+      }
+    ];
+
+    function getCaretRect() {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return null;
+
+      const range = selection.getRangeAt(0).cloneRange();
+      range.collapse(false);
+      const marker = document.createElement("span");
+      marker.textContent = "";
+      range.insertNode(marker);
+      const rect = marker.getBoundingClientRect();
+      marker.remove();
+      return rect;
+    }
+
+    function placeSlashMenu() {
+      const rect = getCaretRect();
+      if (!rect || !slashMenu) return;
+
+      slashMenu.classList.add("show");
+      const menuRect = slashMenu.getBoundingClientRect();
+      const x = Math.max(12, Math.min(rect.left, window.innerWidth - menuRect.width - 12));
+      const y = Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - menuRect.height - 12));
+
+      slashMenu.style.left = `${x}px`;
+      slashMenu.style.top = `${y}px`;
+    }
+
+    function getFilteredSlashItems() {
+      const query = slashQuery.toLowerCase().replace(/^\//, "").trim();
+      return slashCommands.filter(command => {
+        if (!query) return true;
+        return command.title.toLowerCase().includes(query) || command.aliases.some(alias => alias.includes(query));
+      });
+    }
+
+    function renderSlashMenu() {
+      const filtered = getFilteredSlashItems();
+      slashMenu.innerHTML = `<div class="slash-label">AI blocks</div>`;
+
+      filtered.forEach((command, index) => {
+        const button = document.createElement("button");
+        button.className = `slash-item${index === slashIndex ? " active" : ""}`;
+        button.type = "button";
+        button.innerHTML = `
+          <span class="slash-icon">${command.title.includes("AI") || command.title.includes("Multi") ? "✦" : "T"}</span>
+          <span>
+            <span class="slash-title">${escapeHtml(command.title)}</span>
+            <span class="slash-desc">/${escapeHtml(command.aliases[0])}</span>
+          </span>
+        `;
+        button.addEventListener("mousedown", event => {
+          event.preventDefault();
+          runSlashCommand(index);
+        });
+        slashMenu.appendChild(button);
+      });
+
+      if (!filtered.length) {
+        slashMenu.insertAdjacentHTML("beforeend", `
+          <button class="slash-item active" type="button">
+            <span class="slash-icon">?</span>
+            <span>
+              <span class="slash-title">No results</span>
+              <span class="slash-desc">Press Enter to close</span>
+            </span>
+          </button>
+        `);
+      }
+
+      placeSlashMenu();
+    }
+
+    function showSlashMenu() {
+      slashMenuOpen = true;
+      slashQuery = "/";
+      slashIndex = 0;
+      hideSelectionToolbar();
+      hideAIModal();
+      renderSlashMenu();
+    }
+
+    function hideSlashMenu() {
+      slashMenuOpen = false;
+      slashQuery = "";
+      slashIndex = 0;
+      slashMenu?.classList.remove("show");
+    }
+
+    function removeSlashQuery() {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || !slashQuery) return;
+
+      const range = selection.getRangeAt(0);
+      const node = range.startContainer;
+      const end = range.startOffset;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const start = Math.max(0, end - slashQuery.length);
+        node.nodeValue = node.nodeValue.slice(0, start) + node.nodeValue.slice(end);
+        const newRange = document.createRange();
+        newRange.setStart(node, start);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }
+
+    function applySlashFormat(tag) {
+      removeSlashQuery();
+      hideSlashMenu();
+
+      const chain = tiptapEditor.chain().focus();
+
+      if (tag === "h1") chain.setHeading({ level: 1 }).run();
+      else if (tag === "h2") chain.setHeading({ level: 2 }).run();
+      else if (tag === "h3") chain.setHeading({ level: 3 }).run();
+      else chain.setParagraph().run();
+
+      saveHistory();
+    }
+
+    function runSlashCommand(index = slashIndex) {
+      const filtered = getFilteredSlashItems();
+      const command = filtered[index];
+      if (!command) {
+        hideSlashMenu();
+        return;
+      }
+      command.run();
+    }
+
+    document.querySelectorAll(".slash-item").forEach(button => {
+      button.addEventListener("click", () => {
+        runAiPrompt(button.dataset.prompt || button.textContent);
+      });
+    });
+
+    document.getElementById("focusAiBtn").addEventListener("mousedown", event => {
+      event.preventDefault();
+      showAIModalForSelection();
+    });
+
+    document.querySelectorAll("[data-command]").forEach(button => {
+      button.addEventListener("mousedown", event => {
+        event.preventDefault();
+        restoreSavedSelection();
+
+        const command = button.dataset.command;
+        const chain = tiptapEditor.chain().focus();
+
+        if (command === "bold") chain.toggleBold().run();
+        else if (command === "italic") chain.toggleItalic().run();
+        else if (command === "strikeThrough") chain.toggleStrike().run();
+        else if (command === "insertUnorderedList") chain.toggleBulletList().run();
+        else if (command === "insertOrderedList") chain.toggleOrderedList().run();
+
+        saveHistory();
+      });
+    });
+
+    document.getElementById("inlineCodeBtn").addEventListener("mousedown", event => {
+      event.preventDefault();
+      restoreSavedSelection();
+      wrapSelectionWithTag("code");
+      saveHistory();
+    });
+
+    document.getElementById("blockFormatBtn").addEventListener("mousedown", event => {
+      event.preventDefault();
+      restoreSavedSelection();
+
+      const current = getSelectedBlockFormat();
+      const nextTag =
+        current === "Paragraph"
+          ? "h1"
+          : current === "Header"
+            ? "h2"
+            : current === "Header 2"
+              ? "h3"
+              : "p";
+
+      const chain = tiptapEditor.chain().focus();
+
+      if (nextTag === "h1") chain.setHeading({ level: 1 }).run();
+      else if (nextTag === "h2") chain.setHeading({ level: 2 }).run();
+      else if (nextTag === "h3") chain.setHeading({ level: 3 }).run();
+      else chain.setParagraph().run();
+
+      updateBlockFormatLabel();
+      saveHistory();
+    });
+
+    function getEditorBlocks() {
+      return Array.from(
+        editor.querySelectorAll(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre")
+      );
+    }
+
+    function getCaretBlock() {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || !editor.contains(selection.anchorNode)) return null;
+
+      const node =
+        selection.anchorNode.nodeType === Node.TEXT_NODE
+          ? selection.anchorNode.parentElement
+          : selection.anchorNode;
+
+      return node?.closest?.(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre") || null;
+    }
+
+    function placeBlockTools(block) {
+      if (!block || !blockTools) return;
+
+      activeBlock = block;
+      const rect = block.getBoundingClientRect();
+      const toolsRect = blockTools.getBoundingClientRect();
+      const x = Math.max(8, rect.left - toolsRect.width - 8);
+      const y = rect.top + Math.max(0, (Math.min(rect.height, 32) - toolsRect.height) / 2);
+
+      blockTools.style.left = `${x}px`;
+      blockTools.style.top = `${y}px`;
+      blockTools.classList.add("show");
+    }
+
+    function updateBlockToolsFromCaret() {
+      const block = getCaretBlock();
+      if (block) placeBlockTools(block);
+    }
+
+    editor.addEventListener("mousemove", event => {
+      const block = event.target.closest?.(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre");
+      if (block && editor.contains(block)) placeBlockTools(block);
+    });
+
+    editor.addEventListener("mouseleave", () => {
+      updateBlockToolsFromCaret();
+    });
+
+    editor.addEventListener("keyup", updateBlockToolsFromCaret);
+    editor.addEventListener("mouseup", updateBlockToolsFromCaret);
+    editor.addEventListener("focus", updateBlockToolsFromCaret);
+
+    addBlockBtn.addEventListener("mousedown", event => {
+      event.preventDefault();
+      const block = activeBlock || getCaretBlock();
+      if (!block) return;
+
+      tiptapEditor.chain().focus().insertContentAt(tiptapEditor.state.selection.to, "<p></p>").run();
+      requestAnimationFrame(updateBlockToolsFromCaret);
+      saveHistory();
+    });
+
+    document.getElementById("dragBlockBtn").addEventListener("mousedown", event => {
+      event.preventDefault();
+      const block = activeBlock || getCaretBlock();
+      if (!block) return;
+      placeBlockTools(block);
+      showToast("Block menu placeholder — ready for drag/reorder options.");
+    });
+
+    function normalizeMatchText(value) {
+      return String(value ?? "")
+        .replace(/\r\n?/g, "\n")
+        .replace(/ /g, " ");
+    }
+
+    function countTextOccurrences(target) {
+      if (!target) return 0;
+
+      let count = 0;
+      const normalizedTarget = normalizeMatchText(target);
+
+      tiptapEditor.state.doc.descendants(node => {
+        if (!node.isText) return true;
+
+        const text = normalizeMatchText(node.text);
+        if (!text.includes(normalizedTarget)) return true;
+
+        let from = 0;
+
+        while (from <= text.length) {
+          const at = text.indexOf(normalizedTarget, from);
+          if (at === -1) break;
+          count += 1;
+          from = at + normalizedTarget.length;
+        }
+
+        return true;
+      });
+
+      return count;
+    }
+
+    function normalizeEditOccurrence(edit) {
+      const occurrenceCount = countTextOccurrences(edit.target);
+      const occurrence = Number.isInteger(edit.occurrence) && edit.occurrence > 0
+        ? edit.occurrence
+        : 1;
+
+      if (occurrenceCount > 1 && !edit.occurrence) {
+        showToast(`Ambiguous target appears ${occurrenceCount} times. Defaulting to occurrence 1.`);
+      }
+
+      if (edit.expectedOccurrenceCount && edit.expectedOccurrenceCount !== occurrenceCount) {
+        console.warn("Occurrence count changed before preview", {
+          target: edit.target,
+          expected: edit.expectedOccurrenceCount,
+          actual: occurrenceCount
+        });
+      }
+
+      return {
+        ...edit,
+        occurrence,
+        occurrenceCount
+      };
+    }
+
+    function previewInlineDiff(edit, index) {
+      if (!edit || !edit.target) return false;
+
+      edit = normalizeEditOccurrence(edit);
+      const occurrence = edit.occurrence;
+
+      if (edit.type === "replace") {
+        return createDiffPreview({
+          type: "replace",
+          target: edit.target,
+          replacement: edit.replacement || "",
+          occurrence,
+          index
+        });
+      }
+
+      if (edit.type === "insert_after" || edit.type === "insert_before") {
+        return createDiffPreview({
+          type: edit.type,
+          target: edit.target,
+          insertText: edit.text || "",
+          occurrence,
+          index
+        });
+      }
+
+      if (edit.type === "remove") {
+        return createDiffPreview({
+          type: "remove",
+          target: edit.target,
+          occurrence,
+          index
+        });
+      }
+
+      if (edit.type === "format") {
+        return createFormatPreview(edit, index);
+      }
+
+      return false;
+    }
+
+    function getProseMirrorRoot() {
+      return editor.querySelector(".ProseMirror") || editor;
+    }
+
+    function normalizeEditWhitespace(root = getProseMirrorRoot()) {
+      root.normalize();
+
+      root.querySelectorAll("p, li, blockquote, h1, h2, h3").forEach(block => {
+        block.innerHTML = block.innerHTML
+          .replace(/\s+([.,!?;:])/g, "$1")
+          .replace(/([([{])\s+/g, "$1")
+          .replace(/\s{2,}/g, " ");
+      });
+    }
+
+    function commitEditorDom({ focus = true } = {}) {
+      const root = getProseMirrorRoot();
+      normalizeEditWhitespace(root);
+
+      // Only committed document HTML should be written into TipTap.
+      // Temporary diff tokens are removed/unwrapped before accept/decline calls this.
+      tiptapEditor.commands.setContent(root.innerHTML, false);
+
+      if (focus) {
+        requestAnimationFrame(() => {
+          tiptapEditor.commands.focus();
+          updateBlockToolsFromCaret();
+        });
+      }
+    }
+
+    function createDiffToken(action, text, diffIndex, { codeSafe = false } = {}) {
+      const isAdd = action === "add";
+
+      // Normal text can preview with inline spans. CodeBlockLowlight/ProseMirror
+      // may strip unsupported inline DOM inside code blocks, so code previews use
+      // an out-of-band card instead.
+      const token = document.createElement("span");
+
+      token.className = isAdd ? "diff-added" : "diff-removed";
+      token.dataset.diffAction = action;
+      token.dataset.diffIndex = String(diffIndex);
+      token.dataset.diffPreview = "true";
+      token.dataset.diffCodeSafe = codeSafe ? "true" : "false";
+      token.dataset.diffTag = "span";
+      token.setAttribute("contenteditable", "false");
+      token.textContent = text;
+
+      token.style.cssText = isAdd
+        ? "display:inline;color:#bbf7d0!important;background:rgba(34,197,94,.28)!important;border:1px solid rgba(34,197,94,.55)!important;border-radius:5px;padding:1px 4px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;"
+        : "display:inline;color:#fecaca!important;background:rgba(239,68,68,.26)!important;border:1px solid rgba(239,68,68,.55)!important;border-radius:5px;padding:1px 4px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#ef4444!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;";
+
+      return token;
+    }
+
+    function getTextNodeDomAtDocPos(docPos) {
+      try {
+        const dom = tiptapEditor.view.domAtPos(docPos);
+        if (dom.node.nodeType === Node.TEXT_NODE) return dom.node;
+        return dom.node.childNodes?.[dom.offset] || dom.node;
+      } catch {
+        return null;
+      }
+    }
+
+    function isCodeBlockDocPos(docPos) {
+      try {
+        const $pos = tiptapEditor.state.doc.resolve(docPos);
+        for (let depth = $pos.depth; depth >= 0; depth--) {
+          if ($pos.node(depth).type.name === "codeBlock") return true;
+        }
+      } catch {
+        return false;
+      }
+
+      return false;
+    }
+
+    function findTextMatch(target, occurrence = 1) {
+      let seen = 0;
+      let found = null;
+      const normalizedTarget = normalizeMatchText(target);
+
+      // Search the ProseMirror document model, not the rendered DOM.
+      // This avoids CodeBlockLowlight token spans splitting one visual code
+      // line into many DOM text nodes, which made exact code targets fail.
+      tiptapEditor.state.doc.descendants((node, pos) => {
+        if (found || !node.isText) return true;
+
+        const text = normalizeMatchText(node.text);
+        if (!text.includes(normalizedTarget)) return true;
+
+        let from = 0;
+
+        while (from <= text.length) {
+          const at = text.indexOf(normalizedTarget, from);
+          if (at === -1) break;
+
+          seen += 1;
+          if (seen === occurrence) {
+            const docFrom = pos + at;
+            found = {
+              node: getTextNodeDomAtDocPos(docFrom),
+              at,
+              inCodeBlock: isCodeBlockDocPos(docFrom),
+              docFrom,
+              normalizedMatch: node.text !== text || target !== normalizedTarget
+            };
+            return false;
+          }
+
+          from = at + normalizedTarget.length;
+        }
+
+        return true;
+      });
+
+      return found;
+    }
+
+    function getDocPositionForDomText(textNode, offset = 0) {
+      try {
+        return tiptapEditor.view.posAtDOM(textNode, offset);
+      } catch {
+        return null;
+      }
+    }
+
+    function getCodeBlockElement(node) {
+      return node?.parentElement?.closest("pre, .notion-code-block");
+    }
+
+    function getCodePreviewHtml({ type, matched, replacement = "", insertText = "" }) {
+      const line = (kind, text) => `<span class="code-diff-preview-line ${kind}">${escapeHtml(text)}</span>`;
+
+      if (type === "replace") {
+        return line("remove", `- ${matched}`) + line("add", `+ ${replacement}`);
+      }
+
+      if (type === "remove") {
+        return line("remove", `- ${matched}`);
+      }
+
+      if (type === "insert_before") {
+        return line("add", `+ ${insertText}`) + line("", `  ${matched}`);
+      }
+
+      if (type === "insert_after") {
+        return line("", `  ${matched}`) + line("add", `+ ${insertText}`);
+      }
+
+      return line("", matched);
+    }
+
+    function createPreviewDecorations({ type, target, replacement = "", insertText = "", index = 0, match }) {
+      if (match.docFrom == null) return false;
+
+      const codeBlock = getCodeBlockElement(match.node);
+      const decorations = [];
+      const removeClass = match.inCodeBlock ? "code-diff-remove" : "diff-removed";
+      const addClass = match.inCodeBlock ? "code-diff-add" : "diff-added";
+
+      if (type === "replace" || type === "remove") {
+        decorations.push(
+          Decoration.inline(match.docFrom, match.docFrom + target.length, {
+            class: removeClass,
+            "data-diff-action": "preview",
+            "data-diff-index": String(index),
+            "data-diff-preview": "true"
+          })
+        );
+      }
+
+      if (type === "replace" || type === "insert_before" || type === "insert_after") {
+        const widgetPos = type === "insert_before" ? match.docFrom : match.docFrom + target.length;
+        decorations.push(
+          Decoration.widget(widgetPos, () => {
+            const token = document.createElement("span");
+            token.className = addClass;
+            token.dataset.diffAction = "preview";
+            token.dataset.diffIndex = String(index);
+            token.dataset.diffPreview = "true";
+            token.contentEditable = "false";
+            token.textContent = type === "replace" ? replacement : insertText;
+            return token;
+          }, { side: type === "insert_before" ? -1 : 1 })
+        );
+      }
+
+      if (codeBlock) codeBlock.classList.add("code-diff-anchor");
+
+      activeDiffs.push({
+        index,
+        type,
+        target,
+        replacement,
+        insertText,
+        docFrom: match.docFrom,
+        docTo: match.docFrom + target.length,
+        previewOnly: true
+      });
+
+      return decorations;
+    }
+
+    function refreshPreviewDecorations() {
+      const decorations = activeDiffs.flatMap(edit => edit.decorations || []);
+      setCodeDiffDecorations(decorations);
+    }
+
+    function createDiffPreview({ type, target, replacement = "", insertText = "", occurrence = 1, index = 0 }) {
+      const match = findTextMatch(target, occurrence);
+      if (!match) return false;
+
+      const decorations = createPreviewDecorations({
+        type,
+        target,
+        replacement,
+        insertText,
+        index,
+        match
+      });
+
+      if (!decorations) return false;
+      activeDiffs[activeDiffs.length - 1].occurrence = occurrence;
+      activeDiffs[activeDiffs.length - 1].decorations = decorations;
+      refreshPreviewDecorations();
+      return true;
+    }
+
+    function createFormatPreview(edit, index) {
+      const label = {
+        bold: "bold",
+        italic: "italic",
+        code: "code",
+        heading_1: "heading 1",
+        heading_2: "heading 2",
+        quote: "quote"
+      }[edit.format] || "format";
+
+      return createDiffPreview({
+        type: "insert_after",
+        target: edit.target,
+        insertText: ` (${label})`,
+        occurrence: edit.occurrence || 1,
+        index
+      });
+    }
+
+    function applyPreviewEdits(edits) {
+      if (!edits.length) return false;
+
+      let transaction = tiptapEditor.state.tr;
+      const ordered = [...edits]
+        .filter(edit => edit.docFrom != null)
+        .sort((a, b) => b.docFrom - a.docFrom);
+
+      ordered.forEach(edit => {
+        const from = edit.docFrom;
+        const to = from + edit.target.length;
+
+        if (edit.type === "replace") {
+          transaction = transaction.insertText(edit.replacement || "", from, to);
+        } else if (edit.type === "remove") {
+          transaction = transaction.delete(from, to);
+        } else if (edit.type === "insert_before") {
+          transaction = transaction.insertText(edit.insertText || "", from);
+        } else if (edit.type === "insert_after") {
+          transaction = transaction.insertText(edit.insertText || "", to);
+        }
+      });
+
+      if (!transaction.docChanged) return false;
+
+      if (lastEditContext) {
+        lastEditContext.from = transaction.mapping.map(lastEditContext.from, -1);
+        lastEditContext.to = transaction.mapping.map(lastEditContext.to, 1);
+        lastEditContext.acceptedEdits.push(...ordered);
+      }
+
+      tiptapEditor.view.dispatch(transaction);
+
+      if (lastEditContext) {
+        lastEditContext.latestText = getDocTextBetween(lastEditContext.from, lastEditContext.to);
+        lastEditContext.latestHtml = tiptapEditor.getHTML();
+        lastEditContext.updatedAt = Date.now();
+      }
+
+      return true;
+    }
+
+    function resetPreviewState({ keepModalOpen = false, refocusEditor = true } = {}) {
+      const root = getProseMirrorRoot();
+
+      clearCodeDiffDecorations();
+
+      root.querySelectorAll(".code-diff-anchor").forEach(node => {
+        node.classList.remove("code-diff-anchor");
+      });
+
+      activeDiffs = [];
+      pendingEdits = [];
+      preview.innerHTML = "";
+
+      if (keepModalOpen) {
+        aiDock?.classList.add("show");
+        requestAnimationFrame(positionAIModal);
+        return;
+      }
+
+      hideAIModal({ refocusEditor: false, resetFollowUp: false });
+
+      if (refocusEditor) {
+        requestAnimationFrame(() => {
+          tiptapEditor.commands.focus();
+          updateBlockToolsFromCaret();
+        });
+      }
+    }
+
+    function acceptInlineDiffs() {
+      // Acceptance is now transaction-only:
+      // 1. diff previews are ProseMirror decorations, never real document nodes;
+      // 2. accepted changes are applied to stored document positions;
+      // 3. no root.innerHTML serialization or setContent call runs here.
+      const prePreviewHistory = historyStack[historyIndex];
+      const editsToApply = activeDiffs.map(({ decorations, ...edit }) => edit);
+
+      applyPreviewEdits(editsToApply);
+      resetPreviewState({ refocusEditor: true });
+
+      // Rewrite the stack so Cmd/Ctrl+Z goes directly from accepted result
+      // back to the clean document, never to the temporary diff preview.
+      const acceptedHtml = tiptapEditor.getHTML();
+      historyStack = historyStack.slice(0, historyIndex + 1);
+      historyStack[historyIndex] = prePreviewHistory;
+      if (historyStack[historyIndex] !== acceptedHtml) {
+        historyStack.push(acceptedHtml);
+        historyIndex = historyStack.length - 1;
+      }
+
+      showToast("Inline edits accepted.");
+    }
+
+    function declineInlineDiffs() {
+      resetPreviewState({ refocusEditor: true });
+      showToast("Inline edits declined.");
+    }
+
+    function clearInlineDiffs({ keepModalOpen = false } = {}) {
+      if (!activeDiffs.length) return;
+
+      if (!keepModalOpen) {
+        declineInlineDiffs();
+        return;
+      }
+
+      resetPreviewState({ keepModalOpen: true, refocusEditor: false });
+    }
+
+    function applyEdit(edit) {
+      if (!edit || !edit.target) return false;
+
+      clearInlineDiffs();
+
+      const shown = previewInlineDiff(edit, 0);
+      if (!shown) return false;
+
+      acceptInlineDiffs();
+      return true;
+    }
+
+    function replaceTextNodeOccurrence(target, replacement, occurrence = 1) {
+      return applyEdit({
+        type: "replace",
+        target,
+        replacement,
+        occurrence
+      });
+    }
+
+    function formatTextOccurrence(target, format, occurrence = 1) {
+      return createFormatPreview({ target, format, occurrence }, 0);
+    }
+
+    function wrapSelectionWithTag(tagName) {
+      if (tagName === "code") {
+        tiptapEditor.chain().focus().toggleCode().run();
+        return true;
+      }
+
+      return false;
+    }
+
+    editor.addEventListener("mouseup", updateSelectionUI);
+    editor.addEventListener("keyup", updateSelectionUI);
+    editor.addEventListener("focus", updateSelectionUI);
+
+    document.addEventListener("selectionchange", () => {
+      requestAnimationFrame(updateSelectionUI);
+    });
+
+    function updateSelectionMeta() {
+      const selected = getSelectedText();
+
+      if (selected && selected !== editor.innerText.trim()) {
+        aiMeta.textContent = `${selected.length} selected characters`;
+      } else {
+        aiMeta.textContent = "Full page mode";
+      }
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", positionAIModal);
+      window.visualViewport.addEventListener("scroll", positionAIModal);
+    }
+
+    window.addEventListener("resize", positionAIModal);
+    aiInput.addEventListener("focus", () => requestAnimationFrame(positionAIModal));
+    aiInput.addEventListener("blur", () => {
+      requestAnimationFrame(() => {
+        if (!aiDock?.classList.contains("show")) setMobileFocusScrollLock(false);
+      });
+    });
+
+    document.addEventListener("keydown", event => {
+      const isMod = event.metaKey || event.ctrlKey;
+
+      if (!isMod && editor.contains(document.activeElement)) {
+        if (event.key === "/") {
+          requestAnimationFrame(showSlashMenu);
+        } else if (slashMenuOpen && event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+          slashQuery += event.key;
+          slashIndex = 0;
+          requestAnimationFrame(renderSlashMenu);
+        } else if (slashMenuOpen && event.key === "Backspace") {
+          slashQuery = slashQuery.slice(0, -1);
+          if (!slashQuery) {
+            hideSlashMenu();
+          } else {
+            slashIndex = 0;
+            requestAnimationFrame(renderSlashMenu);
+          }
+        } else if (slashMenuOpen && event.key === "ArrowDown") {
+          event.preventDefault();
+          slashIndex = Math.min(slashIndex + 1, getFilteredSlashItems().length - 1);
+          renderSlashMenu();
+        } else if (slashMenuOpen && event.key === "ArrowUp") {
+          event.preventDefault();
+          slashIndex = Math.max(slashIndex - 1, 0);
+          renderSlashMenu();
+        } else if (slashMenuOpen && event.key === "Enter") {
+          event.preventDefault();
+          runSlashCommand();
+        } else if (slashMenuOpen && event.key === "Escape") {
+          event.preventDefault();
+          hideSlashMenu();
+        }
+      }
+
+      if (isMod && event.key.toLowerCase() === "z" && !event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        undo();
+      }
+
+      if (
+        (isMod && event.key.toLowerCase() === "z" && event.shiftKey) ||
+        (isMod && event.key.toLowerCase() === "y")
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        redo();
+      }
+
+      if (isMod && event.key.toLowerCase() === "j") {
+        event.preventDefault();
+        aiInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
