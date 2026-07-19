@@ -197,10 +197,16 @@
       top: 0;
       display: flex;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(24, 24, 27, 0.9);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(16px);
       opacity: 0;
       pointer-events: none;
-      transform: translateX(-6px);
+      transform: translateX(-8px);
       transition: opacity 0.12s ease, transform 0.12s ease;
     }
 
@@ -212,19 +218,64 @@
     }
 
     .block-tool {
-      width: 24px;
-      height: 24px;
-      border-radius: 5px;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
       background: transparent;
-      color: var(--muted-2);
-      font-size: 18px;
+      color: var(--muted);
+      font-size: 15px;
       line-height: 1;
       font-weight: 700;
+      display: grid;
+      place-items: center;
     }
 
     .block-tool:hover {
-      background: var(--panel-hover);
+      background: rgba(255, 255, 255, 0.12);
       color: white;
+    }
+
+    .block-tool.dragging {
+      background: rgba(96, 165, 250, 0.16);
+      color: #dbeafe;
+    }
+
+    .block-drop-target {
+      outline: 1px dashed rgba(96, 165, 250, 0.38);
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.18);
+    }
+
+    .block-tune-popup {
+      position: fixed;
+      z-index: 1200;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      background: rgba(24, 24, 27, 0.98);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
+      min-width: 140px;
+    }
+
+    .block-tune-popup.show {
+      display: flex;
+    }
+
+    .popup-action {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: transparent;
+      color: #f4f4f5;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .popup-action:hover {
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .selection-toolbar {
@@ -236,16 +287,18 @@
       display: none;
       align-items: center;
       gap: 4px;
-      padding: 6px;
-      border: 1px solid rgba(55, 53, 47, 0.16);
-      border-radius: 14px;
-      background: #ffffff;
-      color: #111827;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(24, 24, 27, 0.95);
+      color: #f4f4f5;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
       max-width: calc(100vw - 24px);
       overflow-x: auto;
       scrollbar-width: none;
     }
+
     .selection-toolbar.show {
       display: flex;
     }
@@ -256,38 +309,39 @@
 
     .tool-btn {
       flex: 0 0 auto;
-      min-width: 32px;
-      height: 34px;
-      padding: 0 10px;
-      border-radius: 8px;
+      min-width: 28px;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 999px;
       background: transparent;
-      color: #111827;
-      font-size: 14px;
+      color: #f4f4f5;
+      font-size: 13px;
       font-weight: 600;
       white-space: nowrap;
     }
 
     .tool-btn:hover {
-      background: #f1f1ef;
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .tool-ai {
-      background: transparent;
+      background: rgba(96, 165, 250, 0.16);
       border: 0;
-      color: #3f9fa1;
+      color: #dbeafe;
       font-weight: 700;
+      padding: 0 10px;
     }
 
     .divider {
       flex: 0 0 auto;
       width: 1px;
-      height: 20px;
-      margin: 0 3px;
-      background: var(--border);
+      height: 18px;
+      margin: 0 2px;
+      background: rgba(255, 255, 255, 0.14);
     }
 
     .format-select {
-      min-width: 118px;
+      min-width: 112px;
       justify-content: flex-start;
       text-align: left;
     }
@@ -539,12 +593,14 @@
       display: none;
       transform: none;
       width: min(720px, calc(100vw - 24px));
-      border: 1px solid var(--border);
-      border-radius: 19px;
-      background: rgba(32, 32, 32, 0.96);
-      box-shadow: 0 26px 82px rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(24, 24, 27, 0.95);
+      color: #f4f4f5;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
       overflow: visible;
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(18px);
     }
 
     .ai-dock.show {
@@ -584,11 +640,11 @@
 
     .multi-edit-preview {
       display: grid;
-      gap: 8px;
+      gap: 6px;
       max-height: 230px;
       overflow: auto;
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
+      padding: 8px 8px 0;
+      border-bottom: 0;
     }
 
     .multi-edit-preview:empty {
@@ -598,11 +654,11 @@
     .edit-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: 13px;
-      background: var(--panel-soft);
-      color: #d4d4d8;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f4f4f5;
       font-size: 13px;
       overflow: hidden;
       opacity: 0;
@@ -781,29 +837,32 @@
     .composer {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
+      gap: 4px;
+      padding: 5px;
     }
 
     .spark {
-      width: 31px;
-      height: 31px;
+      min-width: 28px;
+      height: 30px;
+      padding: 0 8px;
       flex: 0 0 auto;
-      border-radius: 10px;
+      border-radius: 999px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      font-weight: 800;
+      background: rgba(96, 165, 250, 0.16);
+      color: #dbeafe;
+      font-weight: 700;
     }
 
     .composer input {
       flex: 1;
       min-width: 0;
+      height: 30px;
       border: 0;
       outline: 0;
       background: transparent;
-      color: white;
-      font-size: 14px;
+      color: #f4f4f5;
+      font-size: 13px;
     }
 
     .composer input::placeholder {
@@ -811,17 +870,19 @@
     }
 
     .send {
-      width: 33px;
-      height: 33px;
+      min-width: 28px;
+      height: 30px;
+      padding: 0 9px;
       flex: 0 0 auto;
-      border-radius: 10px;
-      background: var(--blue-strong);
-      color: white;
-      font-weight: 800;
+      border-radius: 999px;
+      background: transparent;
+      color: #f4f4f5;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .send:hover {
-      background: #2563eb;
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .send:disabled {
@@ -831,8 +892,8 @@
 
     .quick-actions {
       display: flex;
-      gap: 7px;
-      padding: 0 12px 12px;
+      gap: 4px;
+      padding: 0 5px 5px;
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -843,17 +904,18 @@
 
     .quick-action {
       flex: 0 0 auto;
-      padding: 7px 10px;
+      height: 30px;
+      padding: 0 8px;
       border-radius: 999px;
-      background: #262626;
-      border: 1px solid var(--border);
-      color: #e4e4e7;
-      font-size: 12.5px;
-      font-weight: 650;
+      background: transparent;
+      border: 0;
+      color: #f4f4f5;
+      font-size: 13px;
+      font-weight: 600;
     }
 
     .quick-action:hover {
-      background: #303030;
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .quick-action.accept {
@@ -912,11 +974,11 @@
 
     .multi-edit-preview {
       display: grid;
-      gap: 8px;
+      gap: 6px;
       max-height: 230px;
       overflow: auto;
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
+      padding: 8px 8px 0;
+      border-bottom: 0;
     }
 
     .multi-edit-preview:empty {
@@ -926,11 +988,11 @@
     .edit-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: 13px;
-      background: var(--panel-soft);
-      color: #d4d4d8;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f4f4f5;
       font-size: 13px;
       overflow: hidden;
       opacity: 0;
@@ -1071,29 +1133,32 @@
     .composer {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
+      gap: 4px;
+      padding: 5px;
     }
 
     .spark {
-      width: 31px;
-      height: 31px;
+      min-width: 28px;
+      height: 30px;
+      padding: 0 8px;
       flex: 0 0 auto;
-      border-radius: 10px;
+      border-radius: 999px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      font-weight: 800;
+      background: rgba(96, 165, 250, 0.16);
+      color: #dbeafe;
+      font-weight: 700;
     }
 
     .composer input {
       flex: 1;
       min-width: 0;
+      height: 30px;
       border: 0;
       outline: 0;
       background: transparent;
-      color: white;
-      font-size: 14px;
+      color: #f4f4f5;
+      font-size: 13px;
     }
 
     .composer input::placeholder {
@@ -1101,17 +1166,19 @@
     }
 
     .send {
-      width: 33px;
-      height: 33px;
+      min-width: 28px;
+      height: 30px;
+      padding: 0 9px;
       flex: 0 0 auto;
-      border-radius: 10px;
-      background: var(--blue-strong);
-      color: white;
-      font-weight: 800;
+      border-radius: 999px;
+      background: transparent;
+      color: #f4f4f5;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .send:hover {
-      background: #2563eb;
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .send:disabled {
@@ -1121,8 +1188,8 @@
 
     .quick-actions {
       display: flex;
-      gap: 7px;
-      padding: 0 12px 12px;
+      gap: 4px;
+      padding: 0 5px 5px;
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -1133,21 +1200,23 @@
 
     .quick-action {
       flex: 0 0 auto;
-      padding: 7px 10px;
+      height: 30px;
+      padding: 0 8px;
       border-radius: 999px;
-      background: #262626;
-      border: 1px solid var(--border);
-      color: #e4e4e7;
-      font-size: 12.5px;
-      font-weight: 650;
+      background: transparent;
+      border: 0;
+      color: #f4f4f5;
+      font-size: 13px;
+      font-weight: 600;
     }
 
     .quick-action:hover {
-      background: #303030;
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .editor span.diff-added,
     .editor .ProseMirror span.diff-added {
+      display: inline-block;
       color: #86efac !important;
       background: rgba(34, 197, 94, 0.24) !important;
       border: 1px solid rgba(34, 197, 94, 0.45) !important;
@@ -1156,6 +1225,11 @@
       text-decoration: none !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      will-change: opacity, transform;
     }
 
     .editor code span.diff-added,
@@ -1164,7 +1238,7 @@
     .editor .ProseMirror code span.diff-added,
     .editor .ProseMirror pre span.diff-added,
     .editor .ProseMirror .notion-code-block span.diff-added {
-      display: inline !important;
+      display: inline-block !important;
       color: #bbf7d0 !important;
       background: rgba(34, 197, 94, 0.28) !important;
       border: 1px solid rgba(34, 197, 94, 0.55) !important;
@@ -1173,8 +1247,12 @@
       text-decoration: none !important;
       font: inherit !important;
       white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
+      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      will-change: opacity, transform;
     }
 
     .slash-menu-placeholder-marker-a {
@@ -1183,6 +1261,7 @@
 
     .editor span.diff-removed,
     .editor .ProseMirror span.diff-removed {
+      display: inline-block;
       color: #fca5a5 !important;
       background: rgba(239, 68, 68, 0.22) !important;
       border: 1px solid rgba(239, 68, 68, 0.45) !important;
@@ -1193,6 +1272,11 @@
       text-decoration-color: #ef4444 !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      will-change: opacity, transform;
     }
 
     .editor code span.diff-removed,
@@ -1201,7 +1285,7 @@
     .editor .ProseMirror code span.diff-removed,
     .editor .ProseMirror pre span.diff-removed,
     .editor .ProseMirror .notion-code-block span.diff-removed {
-      display: inline !important;
+      display: inline-block !important;
       color: #fecaca !important;
       background: rgba(239, 68, 68, 0.26) !important;
       border: 1px solid rgba(239, 68, 68, 0.55) !important;
@@ -1212,8 +1296,23 @@
       text-decoration-color: #ef4444 !important;
       font: inherit !important;
       white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
+      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      will-change: opacity, transform;
+    }
+
+    @keyframes diff-pill-enter {
+      from {
+        opacity: 0;
+        transform: translateY(3px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .code-diff-preview {
@@ -1409,7 +1508,14 @@
       <div class="workspace">
         <div class="block-tools">
           <button class="block-tool" id="addBlockBtn" title="Add block">+</button>
-          <button class="block-tool" id="dragBlockBtn" title="Block menu">⋮⋮</button>
+          <button class="block-tool" id="dragBlockBtn" title="Block actions">⋮</button>
+        </div>
+
+        <div class="block-tune-popup" id="blockTunePopup" hidden>
+          <button class="popup-action" type="button" data-action="move-up">↑ Move up</button>
+          <button class="popup-action" type="button" data-action="move-down">↓ Move down</button>
+          <button class="popup-action" type="button" data-action="duplicate">⧉ Duplicate</button>
+          <button class="popup-action" type="button" data-action="delete">🗑 Delete</button>
         </div>
 
         <div class="selection-toolbar">
@@ -1702,8 +1808,11 @@
     const selectionToolbar = document.querySelector(".selection-toolbar");
     const aiDock = document.querySelector(".ai-dock");
     const blockTools = document.querySelector(".block-tools");
+    const blockTunePopup = document.getElementById("blockTunePopup");
     const addBlockBtn = document.getElementById("addBlockBtn");
+    const dragBlockBtn = document.getElementById("dragBlockBtn");
     let activeBlock = null;
+    let dragState = null;
 
     const initialEditorContent = editor.innerHTML;
     editor.innerHTML = "";
@@ -1756,6 +1865,7 @@
     let savedSelectedHtml = "";
     let isAiStreaming = false;
     let lastEditContext = null;
+    let previewTransitionTimer = null;
     const queuedPrompts = [];
 
     const getDocumentContentsTool = {
@@ -1797,6 +1907,20 @@
         name: "get_cursor_position",
         description:
           "Retrieve the current cursor position and selection range in the document so edits can target the user's insertion point or active selection.",
+        parameters: {
+          type: "object",
+          properties: {},
+          additionalProperties: false
+        }
+      }
+    };
+
+    const editorGetSelectionTool = {
+      type: "function",
+      function: {
+        name: "editor_get_selection",
+        description:
+          "Report whether the user has an active selection and describe its location, size, and surrounding context so edits can be targeted precisely.",
         parameters: {
           type: "object",
           properties: {},
@@ -2016,6 +2140,7 @@
 
       savedSelectionRange = range;
       savedSelectionRect = getSelectionRect(range);
+      selectionToolbarPlacement = null;
       savedSelectedHtml = wrapper.innerHTML;
       return true;
     }
@@ -2043,7 +2168,32 @@
       return savedSelectedHtml;
     }
 
-    function placeFloatingToolbar(rect) {
+    let selectionToolbarPlacement = null;
+
+    function getSelectionUnionRect(range) {
+      if (!range) return null;
+
+      const rects = Array.from(range.getClientRects())
+        .filter(rect => rect.width || rect.height);
+
+      if (!rects.length) return range.getBoundingClientRect();
+
+      const top = Math.min(...rects.map(rect => rect.top));
+      const right = Math.max(...rects.map(rect => rect.right));
+      const bottom = Math.max(...rects.map(rect => rect.bottom));
+      const left = Math.min(...rects.map(rect => rect.left));
+
+      return {
+        top,
+        right,
+        bottom,
+        left,
+        width: right - left,
+        height: bottom - top
+      };
+    }
+
+    function placeFloatingToolbar(rect, range = savedSelectionRange) {
       if (!rect || !selectionToolbar) return;
 
       selectionToolbar.classList.add("show");
@@ -2051,6 +2201,7 @@
       const gap = 10;
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const unionRect = getSelectionUnionRect(range) || rect;
 
       const x = Math.max(
         12,
@@ -2060,15 +2211,23 @@
         )
       );
 
-      const spaceAbove = rect.top - gap;
-      const spaceBelow = viewportHeight - rect.bottom - gap;
-      const prefersAbove =
-        spaceAbove >= toolbarRect.height + gap &&
-        (spaceBelow < toolbarRect.height + gap || rect.top > viewportHeight / 2);
+      const canStayAbove = unionRect.top - gap >= toolbarRect.height + 12;
+      const canStayBelow = unionRect.bottom + gap + toolbarRect.height <= viewportHeight - 12;
 
-      const y = prefersAbove
-        ? rect.top - toolbarRect.height - gap
-        : rect.bottom + gap;
+      if (!selectionToolbarPlacement || !canStayAbove && !canStayBelow) {
+        selectionToolbarPlacement =
+          canStayBelow || !canStayAbove
+            ? "below"
+            : "above";
+      } else if (selectionToolbarPlacement === "above" && !canStayAbove) {
+        selectionToolbarPlacement = "below";
+      } else if (selectionToolbarPlacement === "below" && !canStayBelow) {
+        selectionToolbarPlacement = "above";
+      }
+
+      const y = selectionToolbarPlacement === "above"
+        ? unionRect.top - toolbarRect.height - gap
+        : unionRect.bottom + gap;
       const clampedY = Math.max(12, Math.min(y, viewportHeight - toolbarRect.height - 12));
 
       selectionToolbar.style.left = `${x}px`;
@@ -2301,28 +2460,70 @@
       };
     }
 
-    function getCursorPosition() {
+    function getEditorSelectionInfo() {
       const selection = tiptapEditor?.state?.selection;
-      if (!selection) {
+      const doc = tiptapEditor?.state?.doc;
+
+      if (!selection || !doc) {
         return {
-          cursorPosition: null,
+          hasSelection: false,
+          isCollapsed: true,
+          selectionText: "",
+          selectionLength: 0,
           selectionStart: null,
           selectionEnd: null,
-          isCollapsed: true,
-          selectedText: ""
+          anchorPosition: null,
+          focusPosition: null,
+          documentLength: 0,
+          occurrenceCountInDocument: 0,
+          parentBlockType: null,
+          contextBeforeCursor: "",
+          contextAfterCursor: ""
         };
       }
 
       const { from, to } = selection;
       const isCollapsed = from === to;
-      const selectedText = isCollapsed ? "" : tiptapEditor.state.doc.textBetween(from, to, "\n");
+      const selectedText = isCollapsed ? "" : doc.textBetween(from, to, "\n");
+      const documentText = doc.textBetween(0, doc.content.size, "\n");
+      const occurrenceCountInDocument = selectedText
+        ? (documentText.match(new RegExp(selectedText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length
+        : 0;
+      const resolved = doc.resolve(from);
+      const parentBlockType = resolved?.parent?.type?.name || null;
+      const contextBeforeCursor = doc.textBetween(Math.max(0, from - 80), from);
+      const contextAfterCursor = doc.textBetween(from, Math.min(doc.content.size, from + 80));
 
       return {
-        cursorPosition: from,
+        hasSelection: !isCollapsed,
+        isCollapsed,
+        selectionText: selectedText,
+        selectionLength: selectedText.length,
         selectionStart: from,
         selectionEnd: to,
-        isCollapsed,
-        selectedText
+        anchorPosition: from,
+        focusPosition: to,
+        documentLength: doc.content.size,
+        occurrenceCountInDocument,
+        parentBlockType,
+        contextBeforeCursor,
+        contextAfterCursor
+      };
+    }
+
+    function getCursorPosition() {
+      const selectionInfo = getEditorSelectionInfo();
+      return {
+        cursorPosition: selectionInfo.selectionStart,
+        selectionStart: selectionInfo.selectionStart,
+        selectionEnd: selectionInfo.selectionEnd,
+        isCollapsed: selectionInfo.isCollapsed,
+        selectedText: selectionInfo.selectionText,
+        hasSelection: selectionInfo.hasSelection,
+        occurrenceCountInDocument: selectionInfo.occurrenceCountInDocument,
+        parentBlockType: selectionInfo.parentBlockType,
+        contextBeforeCursor: selectionInfo.contextBeforeCursor,
+        contextAfterCursor: selectionInfo.contextAfterCursor
       };
     }
 
@@ -2645,6 +2846,7 @@
             "Every target must be an exact plain-text substring of the active editing scope.",
             "Before editing a repeated or generic target, disambiguate it. If selected context is insufficient, call get_document_contents.",
             "If the instruction depends on the user's current insertion point or selection, call get_cursor_position before planning.",
+            "If the user has an active selection, call editor_get_selection before planning to understand its exact span, size, and occurrence context.",
             "If the user appears to be following up on existing edits, call is_following_up or use the provided follow-up context before planning.",
             "Treat unaccepted preview edits as part of the current proposed text when the user is following up.",
             "Critical: unaccepted preview edits are not committed document text. If revising a pending replacement, return an edit that targets the original document substring and replaces it with the fully revised proposed text.",
@@ -2672,6 +2874,9 @@
             "Current cursor / selection context:",
             JSON.stringify(getCursorPosition()),
             "",
+            "Selection details:",
+            JSON.stringify(getEditorSelectionInfo()),
+            "",
             "Follow-up context:",
             continuationContext,
             "",
@@ -2693,7 +2898,7 @@
             model: MISTRAL_MODEL,
             temperature: 0.15,
             stream: true,
-            tools: [getDocumentContentsTool, isFollowingUpTool, getCursorPositionTool, multiEditTool],
+            tools: [getDocumentContentsTool, isFollowingUpTool, getCursorPositionTool, editorGetSelectionTool, multiEditTool],
             tool_choice: "auto",
             messages
           })
@@ -2777,12 +2982,19 @@
               name: "get_cursor_position",
               content: JSON.stringify(getCursorPosition())
             });
+          } else if (toolName === "editor_get_selection") {
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: "editor_get_selection",
+              content: JSON.stringify(getEditorSelectionInfo())
+            });
           } else {
             messages.push({
               role: "tool",
               tool_call_id: toolCall.id,
               name: toolName,
-              content: JSON.stringify({ error: "Unsupported tool. Use get_document_contents, is_following_up, get_cursor_position, or multi_edit." })
+              content: JSON.stringify({ error: "Unsupported tool. Use get_document_contents, is_following_up, get_cursor_position, editor_get_selection, or multi_edit." })
             });
           }
         });
@@ -3452,10 +3664,12 @@
       saveHistory();
     });
 
+    function getBlockSelector() {
+      return ".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre";
+    }
+
     function getEditorBlocks() {
-      return Array.from(
-        editor.querySelectorAll(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre")
-      );
+      return Array.from(editor.querySelectorAll(getBlockSelector()));
     }
 
     function getCaretBlock() {
@@ -3467,7 +3681,7 @@
           ? selection.anchorNode.parentElement
           : selection.anchorNode;
 
-      return node?.closest?.(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre") || null;
+      return node?.closest?.(getBlockSelector()) || null;
     }
 
     function placeBlockTools(block) {
@@ -3484,13 +3698,84 @@
       blockTools.classList.add("show");
     }
 
+    function positionBlockTunePopup(block) {
+      if (!block || !blockTunePopup) return;
+
+      const rect = block.getBoundingClientRect();
+      const popupRect = blockTunePopup.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const x = Math.max(12, Math.min(rect.left + rect.width / 2 - popupRect.width / 2, viewportWidth - popupRect.width - 12));
+      const y = Math.max(12, Math.min(rect.bottom + 8, viewportHeight - popupRect.height - 12));
+
+      blockTunePopup.style.left = `${x}px`;
+      blockTunePopup.style.top = `${y}px`;
+      blockTunePopup.classList.add("show");
+      blockTunePopup.hidden = false;
+    }
+
+    function hideBlockTunePopup() {
+      blockTunePopup?.classList.remove("show");
+      blockTunePopup?.setAttribute("hidden", "");
+    }
+
+    function moveBlock(block, direction) {
+      if (!block || !editor.contains(block)) return false;
+
+      const blocks = getEditorBlocks();
+      const index = blocks.indexOf(block);
+      if (index === -1) return false;
+
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      const targetBlock = blocks[targetIndex];
+      if (!targetBlock) return false;
+
+      const root = getProseMirrorRoot();
+      if (direction === "up") {
+        root.insertBefore(block, targetBlock);
+      } else if (targetBlock.nextSibling) {
+        root.insertBefore(block, targetBlock.nextSibling);
+      } else {
+        root.appendChild(block);
+      }
+
+      commitEditorDom({ focus: false });
+      saveHistory();
+      return true;
+    }
+
+    function duplicateBlock(block) {
+      if (!block || !editor.contains(block)) return false;
+
+      const clone = block.cloneNode(true);
+      if (block.nextSibling) {
+        block.parentNode.insertBefore(clone, block.nextSibling);
+      } else {
+        block.parentNode.appendChild(clone);
+      }
+
+      commitEditorDom({ focus: false });
+      saveHistory();
+      return true;
+    }
+
+    function deleteBlock(block) {
+      if (!block || !editor.contains(block)) return false;
+
+      block.remove();
+      commitEditorDom({ focus: false });
+      saveHistory();
+      return true;
+    }
+
     function updateBlockToolsFromCaret() {
       const block = getCaretBlock();
       if (block) placeBlockTools(block);
+      else blockTools?.classList.remove("show");
     }
 
     editor.addEventListener("mousemove", event => {
-      const block = event.target.closest?.(".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror > ul, .ProseMirror > ol, .ProseMirror > blockquote, .ProseMirror > pre");
+      const block = event.target.closest?.(getBlockSelector());
       if (block && editor.contains(block)) placeBlockTools(block);
     });
 
@@ -3501,6 +3786,15 @@
     editor.addEventListener("keyup", updateBlockToolsFromCaret);
     editor.addEventListener("mouseup", updateBlockToolsFromCaret);
     editor.addEventListener("focus", updateBlockToolsFromCaret);
+    editor.addEventListener("click", event => {
+      if (!event.target.closest(".block-tune-popup") && !event.target.closest(".block-tools")) {
+        hideBlockTunePopup();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") hideBlockTunePopup();
+    });
 
     addBlockBtn.addEventListener("mousedown", event => {
       event.preventDefault();
@@ -3512,12 +3806,100 @@
       saveHistory();
     });
 
-    document.getElementById("dragBlockBtn").addEventListener("mousedown", event => {
-      event.preventDefault();
+    function startBlockDrag(event) {
       const block = activeBlock || getCaretBlock();
       if (!block) return;
+
+      event.preventDefault();
+      dragState = {
+        block,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+        targetBlock: null
+      };
+
+      block.classList.add("block-dragging");
+      dragBlockBtn?.classList.add("dragging");
+      dragBlockBtn?.setPointerCapture?.(event.pointerId);
       placeBlockTools(block);
-      showToast("Block menu placeholder — ready for drag/reorder options.");
+    }
+
+    function handleBlockDragMove(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (!dragState.moved && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
+        dragState.moved = true;
+        showToast("Drop the handle to reorder the block.");
+      }
+
+      if (!dragState.moved) return;
+
+      document.querySelectorAll(".block-drop-target").forEach(el => el.classList.remove("block-drop-target"));
+      const targetBlock = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(getBlockSelector());
+      if (targetBlock && targetBlock !== dragState.block && editor.contains(targetBlock)) {
+        targetBlock.classList.add("block-drop-target");
+        dragState.targetBlock = targetBlock;
+      } else {
+        dragState.targetBlock = null;
+      }
+    }
+
+    function finishBlockDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      document.querySelectorAll(".block-drop-target").forEach(el => el.classList.remove("block-drop-target"));
+
+      if (dragState.moved && dragState.targetBlock) {
+        const targetRect = dragState.targetBlock.getBoundingClientRect();
+        const before = event.clientY < targetRect.top + targetRect.height / 2;
+        const root = getProseMirrorRoot();
+
+        if (before) {
+          root.insertBefore(dragState.block, dragState.targetBlock);
+        } else if (dragState.targetBlock.nextSibling) {
+          root.insertBefore(dragState.block, dragState.targetBlock.nextSibling);
+        } else {
+          root.appendChild(dragState.block);
+        }
+
+        commitEditorDom({ focus: false });
+        saveHistory();
+        showToast("Block moved.");
+      } else {
+        positionBlockTunePopup(dragState.block);
+      }
+
+      dragState.block.classList.remove("block-dragging");
+      dragBlockBtn?.classList.remove("dragging");
+      dragState = null;
+    }
+
+    dragBlockBtn?.addEventListener("pointerdown", startBlockDrag);
+    window.addEventListener("pointermove", handleBlockDragMove);
+    window.addEventListener("pointerup", finishBlockDrag);
+
+    document.querySelectorAll(".popup-action").forEach(button => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.action;
+        const targetBlock = activeBlock || getCaretBlock();
+        hideBlockTunePopup();
+
+        if (!targetBlock) return;
+
+        if (action === "move-up") {
+          moveBlock(targetBlock, "up");
+        } else if (action === "move-down") {
+          moveBlock(targetBlock, "down");
+        } else if (action === "duplicate") {
+          duplicateBlock(targetBlock);
+        } else if (action === "delete") {
+          deleteBlock(targetBlock);
+        }
+      });
     });
 
     function normalizeMatchText(value) {
