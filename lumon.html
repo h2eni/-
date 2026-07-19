@@ -473,6 +473,64 @@
       font-size: 12px;
     }
 
+    .ai-status-bar {
+      position: fixed;
+      z-index: 998;
+      left: 0;
+      top: 0;
+      display: none;
+      width: min(720px, calc(100vw - 24px));
+      pointer-events: none;
+      transform: translateY(-100%);
+      transition: transform 160ms ease;
+    }
+
+    .ai-status-bar.show {
+      display: block;
+      transform: translateY(0);
+    }
+
+    .ai-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(17, 17, 17, 0.95);
+      color: #f4f4f5;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+      pointer-events: auto;
+    }
+
+    .ai-status-pill .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--blue);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .ai-status-bar .jump-btn {
+      margin-left: 6px;
+      border: 0;
+      border-radius: 999px;
+      padding: 4px 7px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #f4f4f5;
+      font-size: 12px;
+      line-height: 1;
+      pointer-events: auto;
+    }
+
+    .ai-status-bar .jump-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
     .ai-dock {
       position: fixed;
       z-index: 999;
@@ -489,14 +547,270 @@
       backdrop-filter: blur(20px);
     }
 
-    .ai-dock::before {
-      content: "---";
+    .ai-dock.show {
+      display: block;
+    }
+
+    .ai-top {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(38, 38, 38, 0.72);
+    }
+
+    .ai-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e4e4e7;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .ai-title-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+    }
+
+    .ai-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .multi-edit-preview {
+      display: grid;
+      gap: 8px;
+      max-height: 230px;
+      overflow: auto;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .multi-edit-preview:empty {
+      display: none;
+    }
+
+    .edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 13px;
+      background: var(--panel-soft);
+      color: #d4d4d8;
+      font-size: 13px;
+    }
+
+    .edit-type {
+      flex: 0 0 auto;
+      min-width: 82px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      text-align: center;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+    }
+
+    .type-replace,
+    .type-format {
+      background: rgba(96, 165, 250, 0.16);
+      color: #bfdbfe;
+    }
+
+    .type-insert_after,
+    .type-insert_before {
+      background: rgba(34, 197, 94, 0.16);
+      color: #bbf7d0;
+    }
+
+    .type-remove,
+    .type-error {
+      background: rgba(239, 68, 68, 0.16);
+      color: #fecaca;
+    }
+
+    .edit-copy {
+      flex: 1;
+      min-width: 0;
+      line-height: 1.35;
+      color: #d4d4d8;
+    }
+
+    .edit-rationale {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .info-btn {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      position: relative;
+    }
+
+    .info-btn:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .info-btn:hover::after {
+      content: attr(data-tooltip);
       position: absolute;
-      left: 14px;
-      top: -24px;
-      color: var(--muted-2);
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: min(260px, 50vw);
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(17, 17, 17, 0.96);
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .accept-row {
+      display: flex;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
+
+    .mini-btn {
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #333;
+      color: #e4e4e7;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+    }
+
+    .mini-btn:hover {
+      background: #3f3f46;
+    }
+
+    .mini-btn.accept {
+      background: var(--green-strong);
+      color: white;
+    }
+
+    .mini-btn.accept:hover {
+      background: #15803d;
+    }
+
+    .composer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .spark {
+      width: 31px;
+      height: 31px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      font-weight: 800;
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    .composer input::placeholder {
+      color: var(--muted);
+    }
+
+    .send {
+      width: 33px;
+      height: 33px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      background: var(--blue-strong);
+      color: white;
+      font-weight: 800;
+    }
+
+    .send:hover {
+      background: #2563eb;
+    }
+
+    .send:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 7px;
+      padding: 0 12px 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .quick-actions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-action {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #262626;
+      border: 1px solid var(--border);
+      color: #e4e4e7;
+      font-size: 12.5px;
+      font-weight: 650;
+    }
+
+    .quick-action:hover {
+      background: #303030;
+    }
+
+    .quick-action.accept {
+      background: var(--green-strong);
+      color: white;
+      border-color: transparent;
+    }
+
+    .quick-action.accept:hover {
+      background: #15803d;
+    }
+
+    .quick-action.decline {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .quick-action.decline:hover {
+      background: #52525b;
     }
 
     .ai-dock.show {
@@ -1038,6 +1352,8 @@
           </button>
         </div>
 
+        <div id="aiStatusBar" class="ai-status-bar" aria-live="polite"></div>
+
         <div class="ai-dock">
           <div class="ai-top">
             <div class="ai-title">
@@ -1252,6 +1568,7 @@
 
     const editor = document.getElementById("editor");
     const preview = document.getElementById("preview");
+    const aiStatusBar = document.getElementById("aiStatusBar");
     const aiInput = document.getElementById("aiInput");
     const sendBtn = document.getElementById("sendBtn");
     const aiMeta = document.getElementById("aiMeta");
@@ -1350,12 +1667,26 @@
       }
     };
 
+    const getCursorPositionTool = {
+      type: "function",
+      function: {
+        name: "get_cursor_position",
+        description:
+          "Retrieve the current cursor position and selection range in the document so edits can target the user's insertion point or active selection.",
+        parameters: {
+          type: "object",
+          properties: {},
+          additionalProperties: false
+        }
+      }
+    };
+
     const multiEditTool = {
       type: "function",
       function: {
         name: "multi_edit",
         description:
-          "Create a precise multi-edit plan. Resolve repeated targets carefully and include occurrence numbers whenever a target appears more than once.",
+          "Create a precise multi-edit plan. Resolve repeated targets carefully and include occurrence numbers whenever a target appears more than once. If the instruction depends on the user's current insertion point or selection, use get_cursor_position first.",
         parameters: {
           type: "object",
           properties: {
@@ -1624,6 +1955,8 @@
       aiDock?.classList.remove("show", "keyboard-open");
       setMobileFocusScrollLock(false);
       preview.innerHTML = "";
+      clearStreamingStatus();
+      renderQuickActionBar("presets");
 
       // Closing the AI modal ends the edit session. After this,
       // is_following_up returns "no" and reports 0 edits made.
@@ -1716,6 +2049,16 @@
       document.body.style.overscrollBehavior = enabled ? "none" : "";
     }
 
+    function getPreviewAnchorRect() {
+      if (isTouchDevice() || !getProseMirrorRoot()) return null;
+
+      const previewNodes = Array.from(
+        getProseMirrorRoot().querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor")
+      ).filter(node => node.getBoundingClientRect().width || node.getBoundingClientRect().height);
+
+      return previewNodes[0]?.getBoundingClientRect() || null;
+    }
+
     function positionAIModal() {
       if (!aiDock?.classList.contains("show")) return;
 
@@ -1741,7 +2084,8 @@
       aiDock.classList.remove("keyboard-open");
       setMobileFocusScrollLock(false);
 
-      const anchorRect = savedSelectionRect || getCaretRect();
+      const previewAnchorRect = activeDiffs.length ? getPreviewAnchorRect() : null;
+      const anchorRect = previewAnchorRect || savedSelectionRect || getCaretRect();
       if (!anchorRect) return;
 
       const x = Math.max(
@@ -1760,6 +2104,31 @@
 
       aiDock.style.left = `${x}px`;
       aiDock.style.top = `${y}px`;
+
+      const shouldShowStatus = !isTouchDevice() && aiStatusBar.innerHTML.trim() && aiDock.classList.contains("show");
+      if (shouldShowStatus) {
+        const statusHeight = aiStatusBar.getBoundingClientRect().height || 42;
+        aiStatusBar.style.left = `${x}px`;
+        aiStatusBar.style.top = `${Math.max(12, y - statusHeight - 8)}px`;
+        const dockBottom = y + dockRect.height;
+        const viewportBottom = viewport.top + viewport.height;
+        const needsScrollHint = dockBottom > viewportBottom - 12;
+
+        if (needsScrollHint && !aiStatusBar.querySelector(".jump-btn")) {
+          aiStatusBar.innerHTML = `<div class="ai-status-pill"><span class="status-dot"></span><span>Stream</span><button class="jump-btn" type="button" title="Scroll to the AI modal">↓</button></div>`;
+        } else if (!needsScrollHint && aiStatusBar.querySelector(".jump-btn")) {
+          aiStatusBar.innerHTML = `<div class="ai-status-pill"><span class="status-dot"></span><span>Stream</span></div>`;
+        }
+        aiStatusBar.classList.add("show");
+
+        aiStatusBar.querySelector(".jump-btn")?.addEventListener("click", () => {
+          const targetY = Math.max(0, y + window.scrollY - 24);
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+        });
+      } else {
+        aiStatusBar.innerHTML = "";
+        aiStatusBar.classList.remove("show");
+      }
     }
 
     function showAIModalForSelection() {
@@ -1794,6 +2163,31 @@
       return {
         text: tiptapEditor.getText(),
         html: tiptapEditor.getHTML()
+      };
+    }
+
+    function getCursorPosition() {
+      const selection = tiptapEditor?.state?.selection;
+      if (!selection) {
+        return {
+          cursorPosition: null,
+          selectionStart: null,
+          selectionEnd: null,
+          isCollapsed: true,
+          selectedText: ""
+        };
+      }
+
+      const { from, to } = selection;
+      const isCollapsed = from === to;
+      const selectedText = isCollapsed ? "" : tiptapEditor.state.doc.textBetween(from, to, "\n");
+
+      return {
+        cursorPosition: from,
+        selectionStart: from,
+        selectionEnd: to,
+        isCollapsed,
+        selectedText
       };
     }
 
@@ -2007,12 +2401,28 @@
       ].join("\n");
     }
 
+    function clearStreamingStatus() {
+      aiStatusBar.innerHTML = "";
+      aiStatusBar.classList.remove("show");
+    }
+
     function renderStreamingStatus({ text = "", tools = [] } = {}) {
       const toolList = tools.length
         ? tools.map(name => `<span class="edit-rationale">Tool executed: ${escapeHtml(name)}</span>`).join("")
         : `<span class="edit-rationale">Waiting for streamed tool calls…</span>`;
 
-      preview.innerHTML = `<br>        <div class="edit-row"><br>          <span class="edit-type type-format">stream</span><br>          <span class="edit-copy"><br>            ${escapeHtml(text || "Streaming Mistral response…")}<br>            ${toolList}<br>          </span><br>        </div><br>      `;
+      aiDock?.classList.add("show");
+      preview.innerHTML = "";
+      aiStatusBar.innerHTML = `
+        <div class="ai-status-pill">
+          <span class="status-dot"></span>
+          <span>Stream</span>
+          <span class="edit-rationale">${escapeHtml(text || "Streaming Mistral response…")}</span>
+          ${toolList}
+        </div>
+      `;
+      aiStatusBar.classList.add("show");
+      requestAnimationFrame(positionAIModal);
     }
 
     async function readMistralStream(response, { onDelta, onToolCall }) {
@@ -2099,6 +2509,7 @@
             "Create small, precise, reviewable edits. Never rewrite the whole text unless explicitly asked.",
             "Every target must be an exact plain-text substring of the active editing scope.",
             "Before editing a repeated or generic target, disambiguate it. If selected context is insufficient, call get_document_contents.",
+            "If the instruction depends on the user's current insertion point or selection, call get_cursor_position before planning.",
             "If the user appears to be following up on existing edits, call is_following_up or use the provided follow-up context before planning.",
             "Treat unaccepted preview edits as part of the current proposed text when the user is following up.",
             "Critical: unaccepted preview edits are not committed document text. If revising a pending replacement, return an edit that targets the original document substring and replaces it with the fully revised proposed text.",
@@ -2123,6 +2534,9 @@
             "Active selection HTML, for formatting context only:",
             selectedHtml || "(none)",
             "",
+            "Current cursor / selection context:",
+            JSON.stringify(getCursorPosition()),
+            "",
             "Follow-up context:",
             continuationContext,
             "",
@@ -2144,7 +2558,7 @@
             model: MISTRAL_MODEL,
             temperature: 0.15,
             stream: true,
-            tools: [getDocumentContentsTool, isFollowingUpTool, multiEditTool],
+            tools: [getDocumentContentsTool, isFollowingUpTool, getCursorPositionTool, multiEditTool],
             tool_choice: "auto",
             messages
           })
@@ -2221,12 +2635,19 @@
               name: "is_following_up",
               content: JSON.stringify(getFollowUpStatus(instruction))
             });
+          } else if (toolName === "get_cursor_position") {
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: "get_cursor_position",
+              content: JSON.stringify(getCursorPosition())
+            });
           } else {
             messages.push({
               role: "tool",
               tool_call_id: toolCall.id,
               name: toolName,
-              content: JSON.stringify({ error: "Unsupported tool. Use get_document_contents, is_following_up, or multi_edit." })
+              content: JSON.stringify({ error: "Unsupported tool. Use get_document_contents, is_following_up, get_cursor_position, or multi_edit." })
             });
           }
         });
@@ -2348,11 +2769,42 @@
       };
     }
 
+    function renderQuickActionBar(mode = "presets") {
+      if (!quickActions) return;
+
+      if (mode === "preview") {
+        quickActions.innerHTML = `
+          <button id="acceptAllDiffs" class="quick-action accept" type="button">Accept</button>
+          <button id="declineAllDiffs" class="quick-action decline" type="button">Decline</button>
+        `;
+        return;
+      }
+
+      quickActions.innerHTML = `
+        <button class="quick-action" data-prompt="Improve the writing while preserving the meaning." type="button">
+          Improve writing
+        </button>
+        <button class="quick-action" data-prompt="Make this shorter and clearer." type="button">
+          Make shorter
+        </button>
+        <button class="quick-action" data-prompt="Make this more professional." type="button">
+          More professional
+        </button>
+        <button class="quick-action" data-prompt="Explain this in simpler language." type="button">
+          Explain simply
+        </button>
+        <button class="quick-action" data-prompt="Fix grammar, spelling, and punctuation only." type="button">
+          Fix grammar
+        </button>
+      `;
+    }
+
     function renderEditPreview(plan) {
       plan = retargetFollowUpEditsToPendingPreviews(plan);
 
       clearInlineDiffs({ keepModalOpen: true });
       aiDock?.classList.add("show");
+      clearStreamingStatus();
 
       pendingEdits = Array.isArray(plan.edits) ? plan.edits : [];
       preview.innerHTML = "";
@@ -2392,17 +2844,15 @@
         console.warn("Multi-edit preview match failures", failedEdits);
       }
 
+      renderQuickActionBar("preview");
+
       preview.innerHTML = `
         <div class="edit-row">
           <span class="edit-type type-format">diff</span>
           <span class="edit-copy">
             Inline diff preview is shown directly inside the document.
-            <span class="edit-rationale">Green additions and red removals use span diff tokens. Code blocks use a stable preview card when ProseMirror strips inline spans.</span>
           </span>
-          <span class="accept-row">
-            <button class="mini-btn accept" id="acceptAllDiffs">Accept</button>
-            <button class="mini-btn" id="declineAllDiffs">Decline</button>
-          </span>
+          <button class="info-btn" type="button" data-tooltip="Green additions and red removals use span diff tokens. Code blocks use a stable preview card when ProseMirror strips inline spans." aria-label="Preview details">i</button>
         </div>
       `;
 
@@ -2425,6 +2875,8 @@
     }
 
     function renderError(message) {
+      clearStreamingStatus();
+      renderQuickActionBar("presets");
       preview.innerHTML = `
         <div class="edit-row">
           <span class="edit-type type-error">error</span>
@@ -2553,10 +3005,22 @@
       }
     });
 
-    document.querySelectorAll(".quick-action").forEach(button => {
-      button.addEventListener("click", () => {
-        runAiPrompt(button.dataset.prompt || button.textContent);
-      });
+    const quickActions = document.querySelector(".quick-actions");
+    quickActions?.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.id === "acceptAllDiffs") {
+        acceptInlineDiffs();
+        return;
+      }
+
+      if (button.id === "declineAllDiffs") {
+        declineInlineDiffs();
+        return;
+      }
+
+      runAiPrompt(button.dataset.prompt || button.textContent);
     });
 
     const slashMenu = document.querySelector(".slash-menu");
@@ -3295,6 +3759,8 @@
       activeDiffs = [];
       pendingEdits = [];
       preview.innerHTML = "";
+      clearStreamingStatus();
+      renderQuickActionBar(keepModalOpen ? "preview" : "presets");
 
       if (keepModalOpen) {
         aiDock?.classList.add("show");
