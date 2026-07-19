@@ -604,6 +604,68 @@
       background: var(--panel-soft);
       color: #d4d4d8;
       font-size: 13px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+      animation: preview-row-enter 220ms ease forwards;
+      animation-delay: var(--preview-delay, 0ms);
+      will-change: opacity, transform, max-height, padding;
+    }
+
+    .edit-row > * {
+      clip-path: inset(0 100% 0 0);
+      animation: preview-row-text 220ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+      animation-delay: calc(var(--preview-delay, 0ms) + 70ms);
+      will-change: clip-path;
+    }
+
+    .edit-row.preview-exit {
+      animation: preview-row-exit 180ms ease forwards;
+    }
+
+    @keyframes preview-row-enter {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.985);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        max-height: 72px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+    }
+
+    @keyframes preview-row-exit {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        max-height: 72px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.985);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+      }
+    }
+
+    @keyframes preview-row-text {
+      from {
+        clip-path: inset(0 100% 0 0);
+      }
+      to {
+        clip-path: inset(0 0 0 0);
+      }
     }
 
     .edit-type {
@@ -870,6 +932,68 @@
       background: var(--panel-soft);
       color: #d4d4d8;
       font-size: 13px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+      animation: preview-row-enter 220ms ease forwards;
+      animation-delay: var(--preview-delay, 0ms);
+      will-change: opacity, transform, max-height, padding;
+    }
+
+    .edit-row > * {
+      clip-path: inset(0 100% 0 0);
+      animation: preview-row-text 220ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+      animation-delay: calc(var(--preview-delay, 0ms) + 70ms);
+      will-change: clip-path;
+    }
+
+    .edit-row.preview-exit {
+      animation: preview-row-exit 180ms ease forwards;
+    }
+
+    @keyframes preview-row-enter {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.985);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        max-height: 72px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+    }
+
+    @keyframes preview-row-exit {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        max-height: 72px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.985);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+      }
+    }
+
+    @keyframes preview-row-text {
+      from {
+        clip-path: inset(0 100% 0 0);
+      }
+      to {
+        clip-path: inset(0 0 0 0);
+      }
     }
 
     .edit-type {
@@ -1925,19 +2049,30 @@
       selectionToolbar.classList.add("show");
       const toolbarRect = selectionToolbar.getBoundingClientRect();
       const gap = 10;
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
       const x = Math.max(
         12,
         Math.min(
           rect.left + rect.width / 2 - toolbarRect.width / 2,
-          window.innerWidth - toolbarRect.width - 12
+          viewportWidth - toolbarRect.width - 12
         )
       );
-      const yAbove = rect.top - toolbarRect.height - gap;
-      const yBelow = rect.bottom + gap;
-      const y = yAbove > 12 ? yAbove : yBelow;
+
+      const spaceAbove = rect.top - gap;
+      const spaceBelow = viewportHeight - rect.bottom - gap;
+      const prefersAbove =
+        spaceAbove >= toolbarRect.height + gap &&
+        (spaceBelow < toolbarRect.height + gap || rect.top > viewportHeight / 2);
+
+      const y = prefersAbove
+        ? rect.top - toolbarRect.height - gap
+        : rect.bottom + gap;
+      const clampedY = Math.max(12, Math.min(y, viewportHeight - toolbarRect.height - 12));
 
       selectionToolbar.style.left = `${x}px`;
-      selectionToolbar.style.top = `${y}px`;
+      selectionToolbar.style.top = `${clampedY}px`;
     }
 
     function hideSelectionToolbar() {
@@ -2799,6 +2934,35 @@
       `;
     }
 
+    function buildPreviewRow(html, index = 0) {
+      const row = document.createElement("div");
+      row.className = "edit-row";
+      row.style.setProperty("--preview-delay", `${index * 55}ms`);
+      row.innerHTML = html;
+      return row;
+    }
+
+    function clearPreviewRows(callback) {
+      if (previewTransitionTimer) {
+        window.clearTimeout(previewTransitionTimer);
+        previewTransitionTimer = null;
+      }
+
+      const rows = Array.from(preview.querySelectorAll(".edit-row"));
+      if (!rows.length) {
+        preview.innerHTML = "";
+        if (typeof callback === "function") callback();
+        return;
+      }
+
+      rows.forEach(row => row.classList.add("preview-exit"));
+      previewTransitionTimer = window.setTimeout(() => {
+        preview.innerHTML = "";
+        previewTransitionTimer = null;
+        if (typeof callback === "function") callback();
+      }, 180);
+    }
+
     function renderEditPreview(plan) {
       plan = retargetFollowUpEditsToPendingPreviews(plan);
 
@@ -2807,19 +2971,18 @@
       clearStreamingStatus();
 
       pendingEdits = Array.isArray(plan.edits) ? plan.edits : [];
-      preview.innerHTML = "";
 
       aiMeta.textContent = plan.summary || `${pendingEdits.length} inline suggestions`;
 
-      if (!pendingEdits.length) {
-        preview.innerHTML = `
-          <div class="edit-row">
+      clearPreviewRows(() => {
+        if (!pendingEdits.length) {
+          const emptyRow = buildPreviewRow(`
             <span class="edit-type type-error">empty</span>
             <span class="edit-copy">Mistral returned no edits.</span>
-          </div>
-        `;
-        return;
-      }
+          `);
+          preview.appendChild(emptyRow);
+          return;
+        }
 
       let shown = 0;
       const failedEdits = [];
@@ -2846,17 +3009,16 @@
 
       renderQuickActionBar("preview");
 
-      preview.innerHTML = `
-        <div class="edit-row">
+        const summaryRow = buildPreviewRow(`
           <span class="edit-type type-format">diff</span>
           <span class="edit-copy">
             Inline diff preview is shown directly inside the document.
           </span>
           <button class="info-btn" type="button" data-tooltip="Green additions and red removals use span diff tokens. Code blocks use a stable preview card when ProseMirror strips inline spans." aria-label="Preview details">i</button>
-        </div>
-      `;
+        `);
+        preview.appendChild(summaryRow);
 
-      if (!shown) {
+        if (!shown) {
         aiMeta.textContent = "No matching targets found";
         const details = failedEdits
           .map(edit => `#${edit.index + 1}: ${edit.type || "edit"} target occurrences=${edit.actualOccurrenceCount}, requested occurrence=${edit.occurrence}`)
@@ -2864,25 +3026,27 @@
         showToast("No edits matched. The modal will stay open; see console for diagnostics.");
         console.warn("Mistral returned edits, but none matched the current document text.", details);
         aiDock?.classList.add("show");
-        requestAnimationFrame(() => {
-          aiInput.focus({ preventScroll: true });
-          positionAIModal();
-        });
-      }
+          requestAnimationFrame(() => {
+            aiInput.focus({ preventScroll: true });
+            positionAIModal();
+          });
+        }
 
-      document.getElementById("acceptAllDiffs").addEventListener("click", acceptInlineDiffs);
-      document.getElementById("declineAllDiffs").addEventListener("click", declineInlineDiffs);
+        document.getElementById("acceptAllDiffs").addEventListener("click", acceptInlineDiffs);
+        document.getElementById("declineAllDiffs").addEventListener("click", declineInlineDiffs);
+      });
     }
 
     function renderError(message) {
       clearStreamingStatus();
       renderQuickActionBar("presets");
-      preview.innerHTML = `
-        <div class="edit-row">
+      clearPreviewRows(() => {
+        const errorRow = buildPreviewRow(`
           <span class="edit-type type-error">error</span>
           <span class="edit-copy">${escapeHtml(message)}</span>
-        </div>
-      `;
+        `);
+        preview.appendChild(errorRow);
+      });
     }
 
     function getPromptScope(instruction) {
@@ -3758,7 +3922,7 @@
 
       activeDiffs = [];
       pendingEdits = [];
-      preview.innerHTML = "";
+      clearPreviewRows();
       clearStreamingStatus();
       renderQuickActionBar(keepModalOpen ? "preview" : "presets");
 
