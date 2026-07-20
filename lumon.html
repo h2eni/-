@@ -287,7 +287,7 @@
       display: none;
       align-items: center;
       gap: 4px;
-      padding: 5px;
+      padding: 9px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 999px;
       background: rgba(24, 24, 27, 0.95);
@@ -593,7 +593,7 @@
       display: none;
       transform: none;
       width: min(720px, calc(100vw - 24px));
-      padding: 5px;
+      padding: 9px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 999px;
       background: rgba(24, 24, 27, 0.95);
@@ -601,6 +601,11 @@
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
       overflow: visible;
       backdrop-filter: blur(18px);
+      transition: border-radius 180ms ease, width 180ms ease, max-height 180ms ease;
+    }
+
+    .ai-dock:has(.multi-edit-preview:not(:empty)) {
+      border-radius: 22px;
     }
 
     .ai-dock.show {
@@ -838,7 +843,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      padding: 5px;
+      padding: 9px;
     }
 
     .spark {
@@ -1134,7 +1139,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      padding: 5px;
+      padding: 9px;
     }
 
     .spark {
@@ -1228,7 +1233,7 @@
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: anywhere;
-      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      animation: diff-type-in 520ms steps(var(--diff-steps, 16), end) both;
       will-change: opacity, transform;
     }
 
@@ -1251,7 +1256,7 @@
       overflow-wrap: anywhere;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+      animation: diff-type-in 520ms steps(var(--diff-steps, 16), end) both;
       will-change: opacity, transform;
     }
 
@@ -1275,8 +1280,8 @@
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: anywhere;
-      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-      will-change: opacity, transform;
+      animation: diff-backspace 520ms steps(var(--diff-steps, 16), end) 120ms both;
+      will-change: opacity, transform, box-shadow;
     }
 
     .editor code span.diff-removed,
@@ -1300,8 +1305,34 @@
       overflow-wrap: anywhere;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-      animation: diff-pill-enter 180ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-      will-change: opacity, transform;
+      animation: diff-backspace 520ms steps(var(--diff-steps, 16), end) 120ms both;
+      will-change: opacity, transform, box-shadow;
+    }
+
+    @keyframes diff-type-in {
+      from {
+        opacity: 0.72;
+        box-shadow: inset -0.65em 0 0 rgba(34, 197, 94, 0.34);
+        transform: translateY(2px);
+      }
+      to {
+        opacity: 1;
+        box-shadow: inset 0 0 0 rgba(34, 197, 94, 0);
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes diff-backspace {
+      from {
+        opacity: 1;
+        box-shadow: inset -0.65em 0 0 rgba(239, 68, 68, 0.34);
+        transform: translateY(0);
+      }
+      to {
+        opacity: 1;
+        box-shadow: inset 0 0 0 rgba(239, 68, 68, 0);
+        transform: translateY(0);
+      }
     }
 
     @keyframes diff-pill-enter {
@@ -1430,9 +1461,26 @@
         padding: 66px 25px 245px;
       }
 
-      .block-tools,
       .slash-menu {
         display: none;
+      }
+
+      .block-tools {
+        display: flex;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(0);
+      }
+
+      .block-tool {
+        width: 34px;
+        height: 34px;
+        font-size: 17px;
+      }
+
+      .block-dragging {
+        opacity: 0.82;
+        transform: scale(1.01);
       }
 
       .selection-toolbar {
@@ -1532,7 +1580,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses.</h1>
+          <h1>Designing with edits, not guesses [V1.4.2].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -3123,6 +3171,21 @@
         quickActions.innerHTML = `
           <button id="acceptAllDiffs" class="quick-action accept" type="button">Accept</button>
           <button id="declineAllDiffs" class="quick-action decline" type="button">Decline</button>
+          <button class="quick-action" data-prompt="Improve the writing while preserving the meaning." type="button">
+            Improve writing
+          </button>
+          <button class="quick-action" data-prompt="Make this shorter and clearer." type="button">
+            Make shorter
+          </button>
+          <button class="quick-action" data-prompt="Make this more professional." type="button">
+            More professional
+          </button>
+          <button class="quick-action" data-prompt="Explain this in simpler language." type="button">
+            Explain simply
+          </button>
+          <button class="quick-action" data-prompt="Fix grammar, spelling, and punctuation only." type="button">
+            Fix grammar
+          </button>
         `;
         return;
       }
@@ -3228,6 +3291,7 @@
           </span>
           <button class="info-btn" type="button" data-tooltip="Green additions and red removals use span diff tokens. Code blocks use a stable preview card when ProseMirror strips inline spans." aria-label="Preview details">i</button>
         `);
+        summaryRow.hidden = true;
         preview.appendChild(summaryRow);
 
         if (!shown) {
@@ -3811,51 +3875,102 @@
       if (!block) return;
 
       event.preventDefault();
+      hideBlockTunePopup();
+
       dragState = {
         block,
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
         moved: false,
-        targetBlock: null
+        armed: false,
+        targetBlock: null,
+        holdTimer: window.setTimeout(() => {
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          dragState.armed = true;
+          dragState.block.classList.add("block-dragging");
+          dragBlockBtn?.classList.add("dragging");
+          showToast("Drag to reorder.");
+        }, isTouchDevice() ? 180 : 90)
       };
 
-      block.classList.add("block-dragging");
-      dragBlockBtn?.classList.add("dragging");
       dragBlockBtn?.setPointerCapture?.(event.pointerId);
       placeBlockTools(block);
+    }
+
+    function clearDragTargets() {
+      document.querySelectorAll(".block-drop-target").forEach(el => el.classList.remove("block-drop-target"));
+    }
+
+    function getDragTargetBlock(x, y) {
+      const toolsDisplay = blockTools?.style.display;
+      const buttonDisplay = dragBlockBtn?.style.display;
+
+      if (blockTools) blockTools.style.display = "none";
+      if (dragBlockBtn) dragBlockBtn.style.display = "none";
+
+      const targetBlock = document
+        .elementFromPoint(x, y)
+        ?.closest?.(getBlockSelector());
+
+      if (blockTools) blockTools.style.display = toolsDisplay || "";
+      if (dragBlockBtn) dragBlockBtn.style.display = buttonDisplay || "";
+
+      return targetBlock && editor.contains(targetBlock) ? targetBlock : null;
     }
 
     function handleBlockDragMove(event) {
       if (!dragState || event.pointerId !== dragState.pointerId) return;
 
+      dragState.lastX = event.clientX;
+      dragState.lastY = event.clientY;
+
       const deltaX = event.clientX - dragState.startX;
       const deltaY = event.clientY - dragState.startY;
-      if (!dragState.moved && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
-        dragState.moved = true;
-        showToast("Drop the handle to reorder the block.");
+
+      if (!dragState.armed && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
+        window.clearTimeout(dragState.holdTimer);
+        return;
       }
 
-      if (!dragState.moved) return;
+      if (!dragState.armed) return;
 
-      document.querySelectorAll(".block-drop-target").forEach(el => el.classList.remove("block-drop-target"));
-      const targetBlock = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(getBlockSelector());
-      if (targetBlock && targetBlock !== dragState.block && editor.contains(targetBlock)) {
+      event.preventDefault();
+
+      if (!dragState.moved) {
+        dragState.moved = true;
+        dragState.block.classList.add("block-dragging");
+      }
+
+      clearDragTargets();
+
+      const targetBlock = getDragTargetBlock(event.clientX, event.clientY);
+      if (targetBlock && targetBlock !== dragState.block) {
         targetBlock.classList.add("block-drop-target");
         dragState.targetBlock = targetBlock;
       } else {
         dragState.targetBlock = null;
+      }
+
+      if (isTouchDevice()) {
+        window.scrollBy({
+          top: event.clientY < 80 ? -10 : event.clientY > window.innerHeight - 80 ? 10 : 0,
+          behavior: "instant"
+        });
       }
     }
 
     function finishBlockDrag(event) {
       if (!dragState || event.pointerId !== dragState.pointerId) return;
 
-      document.querySelectorAll(".block-drop-target").forEach(el => el.classList.remove("block-drop-target"));
+      window.clearTimeout(dragState.holdTimer);
+      clearDragTargets();
 
-      if (dragState.moved && dragState.targetBlock) {
+      if (dragState.armed && dragState.moved && dragState.targetBlock) {
         const targetRect = dragState.targetBlock.getBoundingClientRect();
-        const before = event.clientY < targetRect.top + targetRect.height / 2;
+        const before = dragState.lastY < targetRect.top + targetRect.height / 2;
         const root = getProseMirrorRoot();
 
         if (before) {
@@ -3869,18 +3984,30 @@
         commitEditorDom({ focus: false });
         saveHistory();
         showToast("Block moved.");
-      } else {
+      } else if (!dragState.armed) {
         positionBlockTunePopup(dragState.block);
       }
 
       dragState.block.classList.remove("block-dragging");
       dragBlockBtn?.classList.remove("dragging");
       dragState = null;
+      requestAnimationFrame(updateBlockToolsFromCaret);
+    }
+
+    function cancelBlockDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      window.clearTimeout(dragState.holdTimer);
+      clearDragTargets();
+      dragState.block.classList.remove("block-dragging");
+      dragBlockBtn?.classList.remove("dragging");
+      dragState = null;
     }
 
     dragBlockBtn?.addEventListener("pointerdown", startBlockDrag);
-    window.addEventListener("pointermove", handleBlockDragMove);
+    window.addEventListener("pointermove", handleBlockDragMove, { passive: false });
     window.addEventListener("pointerup", finishBlockDrag);
+    window.addEventListener("pointercancel", cancelBlockDrag);
 
     document.querySelectorAll(".popup-action").forEach(button => {
       button.addEventListener("click", () => {
@@ -4048,6 +4175,7 @@
       token.dataset.diffCodeSafe = codeSafe ? "true" : "false";
       token.dataset.diffTag = "span";
       token.setAttribute("contenteditable", "false");
+      token.style.setProperty("--diff-steps", String(Math.max(1, String(text || "").length)));
       token.textContent = text;
 
       token.style.cssText = isAdd
