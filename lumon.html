@@ -1221,18 +1221,18 @@
 
     .editor span.diff-added,
     .editor .ProseMirror span.diff-added {
-      display: inline-block;
-      color: #86efac !important;
-      background: rgba(34, 197, 94, 0.24) !important;
-      border: 1px solid rgba(34, 197, 94, 0.45) !important;
-      border-radius: 5px;
-      padding: 1px 4px;
+      display: inline;
+      color: rgba(39, 131, 222, 1) !important;
+      background-color: rgba(35, 131, 226, 0.1) !important;
+      border: 0 !important;
+      border-radius: 4px;
+      padding: 1px 3px;
       text-decoration: none !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      white-space: inherit;
+      word-break: inherit;
+      overflow-wrap: inherit;
       animation: diff-type-in 520ms steps(var(--diff-steps, 16), end) both;
       will-change: opacity, transform;
     }
@@ -1243,17 +1243,17 @@
     .editor .ProseMirror code span.diff-added,
     .editor .ProseMirror pre span.diff-added,
     .editor .ProseMirror .notion-code-block span.diff-added {
-      display: inline-block !important;
-      color: #bbf7d0 !important;
-      background: rgba(34, 197, 94, 0.28) !important;
-      border: 1px solid rgba(34, 197, 94, 0.55) !important;
-      border-radius: 5px;
-      padding: 1px 4px;
+      display: inline !important;
+      color: rgba(39, 131, 222, 1) !important;
+      background-color: rgba(35, 131, 226, 0.1) !important;
+      border: 0 !important;
+      border-radius: 4px;
+      padding: 1px 3px;
       text-decoration: none !important;
       font: inherit !important;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      white-space: inherit;
+      word-break: inherit;
+      overflow-wrap: inherit;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
       animation: diff-type-in 520ms steps(var(--diff-steps, 16), end) both;
@@ -1267,14 +1267,15 @@
     .editor span.diff-removed,
     .editor .ProseMirror span.diff-removed {
       display: inline-block;
-      color: #fca5a5 !important;
-      background: rgba(239, 68, 68, 0.22) !important;
-      border: 1px solid rgba(239, 68, 68, 0.45) !important;
-      border-radius: 5px;
-      padding: 1px 4px;
+      color: #8a8f98 !important;
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0;
+      padding: 0 1px;
       text-decoration-line: line-through !important;
       text-decoration-thickness: 2px !important;
-      text-decoration-color: #ef4444 !important;
+      text-decoration-color: #8a8f98 !important;
+      text-decoration-skip-ink: none !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
       white-space: pre-wrap;
@@ -1291,14 +1292,15 @@
     .editor .ProseMirror pre span.diff-removed,
     .editor .ProseMirror .notion-code-block span.diff-removed {
       display: inline-block !important;
-      color: #fecaca !important;
-      background: rgba(239, 68, 68, 0.26) !important;
-      border: 1px solid rgba(239, 68, 68, 0.55) !important;
-      border-radius: 5px;
-      padding: 1px 4px;
+      color: #8a8f98 !important;
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0;
+      padding: 0 1px;
       text-decoration-line: line-through !important;
       text-decoration-thickness: 2px !important;
-      text-decoration-color: #ef4444 !important;
+      text-decoration-color: #8a8f98 !important;
+      text-decoration-skip-ink: none !important;
       font: inherit !important;
       white-space: pre-wrap;
       word-break: break-word;
@@ -1377,21 +1379,33 @@
     }
 
     .code-diff-preview-line.remove {
-      color: #fecaca;
-      background: rgba(239, 68, 68, 0.18);
+      color: #8a8f98;
+      background: transparent;
       text-decoration-line: line-through;
       text-decoration-thickness: 2px;
-      text-decoration-color: #ef4444;
+      text-decoration-color: #8a8f98;
+      text-decoration-skip-ink: none;
     }
 
     .code-diff-preview-line.add {
-      color: #bbf7d0;
-      background: rgba(34, 197, 94, 0.18);
+      color: rgba(39, 131, 222, 1);
+      background-color: rgba(35, 131, 226, 0.1);
     }
 
     .code-diff-anchor {
       outline: 1px solid rgba(96, 165, 250, 0.28);
       outline-offset: 4px;
+    }
+
+    .editor pre.code-diff-anchor,
+    .editor .notion-code-block.code-diff-anchor,
+    .editor pre:has(.code-diff-remove, .code-diff-add),
+    .editor .notion-code-block:has(.code-diff-remove, .code-diff-add) {
+      background: rgba(35, 131, 226, 0.14) !important;
+      border-radius: 8px;
+      outline: 1px solid rgba(35, 131, 226, 0.18);
+      box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
+      transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
     }
 
     .ProseMirror .code-diff-remove,
@@ -1400,30 +1414,35 @@
       border-radius: 5px;
       padding: 1px 4px;
       font: inherit !important;
-      white-space: pre-wrap;
+      white-space: pre-wrap !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
     }
 
     .ProseMirror .code-diff-remove {
-      color: #fecaca !important;
-      background: rgba(239, 68, 68, 0.26) !important;
-      border: 1px solid rgba(239, 68, 68, 0.55) !important;
+      color: #8a8f98 !important;
+      background: transparent !important;
+      border: 0 !important;
       text-decoration-line: line-through !important;
       text-decoration-thickness: 2px !important;
-      text-decoration-color: #ef4444 !important;
+      text-decoration-color: #8a8f98 !important;
+      text-decoration-skip-ink: none !important;
     }
 
     .ProseMirror .code-diff-add {
-      color: #bbf7d0 !important;
-      background: rgba(34, 197, 94, 0.28) !important;
-      border: 1px solid rgba(34, 197, 94, 0.55) !important;
+      color: rgba(39, 131, 222, 1) !important;
+      background-color: rgba(35, 131, 226, 0.1) !important;
+      border: 0 !important;
       text-decoration: none !important;
     }
 
-    .diff-preview-active {
-      outline: 1px solid rgba(96, 165, 250, 0.22);
-      border-radius: 6px;
+    .diff-preview-active,
+    .editor .ProseMirror > :has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview) {
+      background: rgba(35, 131, 226, 0.14);
+      border-radius: 8px;
+      outline: 1px solid rgba(35, 131, 226, 0.18);
+      box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
+      transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
     }
 
     .toast {
@@ -1580,7 +1599,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.4.1]</h1>
+          <h1>Designing with edits, not guesses.</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2401,6 +2420,31 @@
       return previewNodes[0]?.getBoundingClientRect() || null;
     }
 
+    function getPreviewUnionRect() {
+      if (!getProseMirrorRoot()) return null;
+
+      const previewNodes = Array.from(
+        getProseMirrorRoot().querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
+      ).filter(node => node.getBoundingClientRect().width || node.getBoundingClientRect().height);
+
+      if (!previewNodes.length) return null;
+
+      const rects = previewNodes.map(node => node.getBoundingClientRect());
+      const top = Math.min(...rects.map(rect => rect.top));
+      const right = Math.max(...rects.map(rect => rect.right));
+      const bottom = Math.max(...rects.map(rect => rect.bottom));
+      const left = Math.min(...rects.map(rect => rect.left));
+
+      return {
+        top,
+        right,
+        bottom,
+        left,
+        width: right - left,
+        height: bottom - top
+      };
+    }
+
     function positionAIModal() {
       if (!aiDock?.classList.contains("show")) return;
 
@@ -2426,7 +2470,7 @@
       aiDock.classList.remove("keyboard-open");
       setMobileFocusScrollLock(false);
 
-      const previewAnchorRect = activeDiffs.length ? getPreviewAnchorRect() : null;
+      const previewAnchorRect = activeDiffs.length ? getPreviewUnionRect() || getPreviewAnchorRect() : null;
       const anchorRect = previewAnchorRect || savedSelectionRect || getCaretRect();
       if (!anchorRect) return;
 
@@ -2438,14 +2482,31 @@
         )
       );
 
-      const below = anchorRect.bottom + 34;
-      const above = anchorRect.top - dockRect.height - 34;
-      const y = below + dockRect.height < viewport.top + viewport.height - 12
-        ? below
-        : Math.max(viewport.top + 12, above);
+      let y;
+
+      if (isTouchDevice()) {
+        y = viewport.top + viewport.height - dockRect.height - 12;
+      } else if (previewAnchorRect) {
+        const gap = 14;
+        const below = previewAnchorRect.bottom + gap;
+        const above = previewAnchorRect.top - dockRect.height - gap;
+        const spaceBelow = viewport.top + viewport.height - previewAnchorRect.bottom;
+        const spaceAbove = previewAnchorRect.top - viewport.top;
+        const placeBelow = spaceBelow >= dockRect.height + gap || spaceBelow >= spaceAbove;
+
+        y = placeBelow
+          ? below
+          : Math.max(viewport.top + 12, above);
+      } else {
+        const below = anchorRect.bottom + 34;
+        const above = anchorRect.top - dockRect.height - 34;
+        y = below + dockRect.height < viewport.top + viewport.height - 12
+          ? below
+          : Math.max(viewport.top + 12, above);
+      }
 
       aiDock.style.left = `${x}px`;
-      aiDock.style.top = `${y}px`;
+      aiDock.style.top = `${Math.max(viewport.top + 12, Math.min(y, viewport.top + viewport.height - dockRect.height - 12))}px`;
 
       const shouldShowStatus = !isTouchDevice() && aiStatusBar.innerHTML.trim() && aiDock.classList.contains("show");
       if (shouldShowStatus) {
@@ -4160,8 +4221,18 @@
       }
     }
 
+    function normalizeDiffPreviewText(value) {
+      return String(value ?? "")
+        .replace(/\r\n?/g, "\n")
+        .replace(/[ \t]*\n[ \t]*/g, "\n")
+        .replace(/([^\n])\n([^\n])/g, "$1 $2");
+    }
+
     function createDiffToken(action, text, diffIndex, { codeSafe = false } = {}) {
       const isAdd = action === "add";
+      const previewText = codeSafe
+        ? String(text ?? "").replace(/\r\n?/g, "\n")
+        : normalizeDiffPreviewText(text);
 
       // Normal text can preview with inline spans. CodeBlockLowlight/ProseMirror
       // may strip unsupported inline DOM inside code blocks, so code previews use
@@ -4175,12 +4246,13 @@
       token.dataset.diffCodeSafe = codeSafe ? "true" : "false";
       token.dataset.diffTag = "span";
       token.setAttribute("contenteditable", "false");
-      token.style.setProperty("--diff-steps", String(Math.max(1, String(text || "").length)));
-      token.textContent = text;
+      token.style.setProperty("--diff-steps", String(Math.max(1, previewText.length)));
+      token.textContent = previewText;
 
+      const preserveBreaksStyle = codeSafe ? "white-space:pre-wrap!important;" : "";
       token.style.cssText = isAdd
-        ? "display:inline;color:#bbf7d0!important;background:rgba(34,197,94,.28)!important;border:1px solid rgba(34,197,94,.55)!important;border-radius:5px;padding:1px 4px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;"
-        : "display:inline;color:#fecaca!important;background:rgba(239,68,68,.26)!important;border:1px solid rgba(239,68,68,.55)!important;border-radius:5px;padding:1px 4px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#ef4444!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;";
+        ? `display:inline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;${preserveBreaksStyle}`
+        : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;${preserveBreaksStyle}`;
 
       return token;
     }
@@ -4291,6 +4363,7 @@
       const decorations = [];
       const removeClass = match.inCodeBlock ? "code-diff-remove" : "diff-removed";
       const addClass = match.inCodeBlock ? "code-diff-add" : "diff-added";
+      const tokenOptions = { codeSafe: match.inCodeBlock };
 
       if (type === "replace" || type === "remove") {
         decorations.push(
@@ -4307,13 +4380,9 @@
         const widgetPos = type === "insert_before" ? match.docFrom : match.docFrom + target.length;
         decorations.push(
           Decoration.widget(widgetPos, () => {
-            const token = document.createElement("span");
+            const token = createDiffToken("add", type === "replace" ? replacement : insertText, index, tokenOptions);
             token.className = addClass;
             token.dataset.diffAction = "preview";
-            token.dataset.diffIndex = String(index);
-            token.dataset.diffPreview = "true";
-            token.contentEditable = "false";
-            token.textContent = type === "replace" ? replacement : insertText;
             return token;
           }, { side: type === "insert_before" ? -1 : 1 })
         );
