@@ -187,7 +187,7 @@
       width: min(100%, 760px);
       min-height: 100vh;
       margin: 0 auto;
-      padding: 96px 32px 220px;
+      padding: 96px 32px 220px 58px;
     }
 
     .block-tools {
@@ -197,16 +197,16 @@
       top: 0;
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 999px;
-      background: rgba(24, 24, 27, 0.9);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
-      backdrop-filter: blur(16px);
+      gap: 1px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
       opacity: 0;
       pointer-events: none;
-      transform: translateX(-8px);
+      transform: translateX(-4px);
       transition: opacity 0.12s ease, transform 0.12s ease;
     }
 
@@ -218,26 +218,29 @@
     }
 
     .block-tool {
-      width: 26px;
+      width: 20px;
       height: 26px;
-      border-radius: 999px;
+      border-radius: 4px;
       background: transparent;
-      color: var(--muted);
-      font-size: 15px;
+      color: #9b9b9b;
+      font-size: 20px;
       line-height: 1;
-      font-weight: 700;
+      font-weight: 500;
       display: grid;
       place-items: center;
+      touch-action: none;
+      user-select: none;
     }
 
     .block-tool:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
+      background: rgba(255, 255, 255, 0.09);
+      color: #d4d4d8;
     }
 
     .block-tool.dragging {
-      background: rgba(96, 165, 250, 0.16);
-      color: #dbeafe;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f4f4f5;
+      cursor: grabbing;
     }
 
     .block-drop-target {
@@ -246,36 +249,115 @@
       box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.18);
     }
 
-    .block-tune-popup {
+    .block-tune-popup,
+    .turn-into-popup {
       position: fixed;
       z-index: 1200;
       display: none;
       flex-direction: column;
-      gap: 4px;
-      padding: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      background: rgba(24, 24, 27, 0.98);
-      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
-      min-width: 140px;
+      gap: 0;
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      background: rgba(37, 37, 37, 0.98);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+      color: #f4f4f5;
     }
 
-    .block-tune-popup.show {
+    .block-tune-popup {
+      width: min(285px, calc(100vw - 24px));
+    }
+
+    .turn-into-popup {
+      width: min(270px, calc(100vw - 24px));
+      max-height: min(560px, calc(100vh - 24px));
+      overflow: auto;
+    }
+
+    .block-tune-popup.show,
+    .turn-into-popup.show {
       display: flex;
     }
 
-    .popup-action {
+    .block-tune-search {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
+      height: 30px;
+      margin: 0 0 10px;
+      padding: 0 8px;
+      border: 1.5px solid var(--blue-strong);
+      border-radius: 7px;
+      outline: 0;
+      background: rgba(43, 43, 43, 0.96);
+      color: #f4f4f5;
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.18);
+    }
+
+    .block-tune-search::placeholder {
+      color: #8a8a8a;
+    }
+
+    .popup-section-label {
+      padding: 5px 8px 8px;
+      color: #b8b8b8;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .popup-action,
+    .turn-action {
+      width: 100%;
+      min-height: 30px;
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      border-radius: 6px;
       background: transparent;
       color: #f4f4f5;
       font-size: 13px;
+      font-weight: 650;
       text-align: left;
     }
 
-    .popup-action:hover {
+    .popup-action:hover,
+    .turn-action:hover,
+    .turn-action.active {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .popup-icon,
+    .turn-icon {
+      width: 20px;
+      color: #eeeeee;
+      font-size: 15px;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .popup-shortcut,
+    .popup-chevron,
+    .turn-check,
+    .turn-chevron {
+      color: #b0b0b0;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .popup-divider {
+      height: 1px;
+      margin: 7px 8px;
       background: rgba(255, 255, 255, 0.1);
+    }
+
+    .popup-meta {
+      padding: 5px 8px 2px;
+      color: #8d8d8d;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 600;
     }
 
     .selection-toolbar {
@@ -1467,7 +1549,7 @@
 
     @media (max-width: 760px) {
       .app {
-        padding: 24px 12px;
+        padding: 0;
       }
 
       .topbar {
@@ -1476,8 +1558,9 @@
       }
 
       .workspace {
+        width: min(100%, 760px);
         min-height: 720px;
-        padding: 66px 25px 245px;
+        padding: 66px max(18px, env(safe-area-inset-right)) 245px 58px;
       }
 
       .slash-menu {
@@ -1492,9 +1575,9 @@
       }
 
       .block-tool {
-        width: 34px;
-        height: 34px;
-        font-size: 17px;
+        width: 22px;
+        height: 30px;
+        font-size: 20px;
       }
 
       .block-dragging {
@@ -1575,14 +1658,146 @@
       <div class="workspace">
         <div class="block-tools">
           <button class="block-tool" id="addBlockBtn" title="Add block">+</button>
-          <button class="block-tool" id="dragBlockBtn" title="Block actions">⋮</button>
+          <button class="block-tool" id="dragBlockBtn" title="Drag block" aria-label="Drag block">⋮⋮</button>
         </div>
 
         <div class="block-tune-popup" id="blockTunePopup" hidden>
-          <button class="popup-action" type="button" data-action="move-up">↑ Move up</button>
-          <button class="popup-action" type="button" data-action="move-down">↓ Move down</button>
-          <button class="popup-action" type="button" data-action="duplicate">⧉ Duplicate</button>
-          <button class="popup-action" type="button" data-action="delete">🗑 Delete</button>
+          <input class="block-tune-search" type="text" placeholder="Search actions..." aria-label="Search block actions" />
+          <div class="popup-section-label">Text</div>
+
+          <button class="popup-action" type="button" data-action="turn-into">
+            <span class="popup-icon">↩</span>
+            <span>Turn into</span>
+            <span class="popup-chevron">›</span>
+          </button>
+          <button class="popup-action" type="button" data-action="color">
+            <span class="popup-icon">▱</span>
+            <span>Color</span>
+            <span class="popup-chevron">›</span>
+          </button>
+
+          <div class="popup-divider"></div>
+
+          <button class="popup-action" type="button" data-action="copy-link">
+            <span class="popup-icon">🔗</span>
+            <span>Copy link to block</span>
+            <span class="popup-shortcut">⌘⌃L</span>
+          </button>
+          <button class="popup-action" type="button" data-action="duplicate">
+            <span class="popup-icon">▣</span>
+            <span>Duplicate</span>
+            <span class="popup-shortcut">⌘D</span>
+          </button>
+          <button class="popup-action" type="button" data-action="move-to">
+            <span class="popup-icon">↗</span>
+            <span>Move to</span>
+            <span class="popup-shortcut">⌘⇧P</span>
+          </button>
+          <button class="popup-action" type="button" data-action="delete">
+            <span class="popup-icon">⌫</span>
+            <span>Delete</span>
+            <span class="popup-shortcut">Del</span>
+          </button>
+
+          <div class="popup-divider"></div>
+
+          <button class="popup-action" type="button" data-action="suggest-edits">
+            <span class="popup-icon">✎</span>
+            <span>Suggest edits</span>
+            <span class="popup-shortcut">⌘⇧⌥X</span>
+          </button>
+
+          <div class="popup-divider"></div>
+
+          <button class="popup-action" type="button" data-action="ask-ai">
+            <span class="popup-icon">✣</span>
+            <span>Ask AI</span>
+            <span class="popup-shortcut">⌘J</span>
+          </button>
+
+          <div class="popup-divider"></div>
+          <div class="popup-meta">
+            <div>Last edited by HELLO THERE</div>
+            <div>Today at 3:13 PM</div>
+          </div>
+        </div>
+
+        <div class="turn-into-popup" id="turnIntoPopup" hidden>
+          <button class="turn-action" type="button" data-turn="p">
+            <span class="turn-icon">T</span>
+            <span>Text</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="h1">
+            <span class="turn-icon">H₁</span>
+            <span>Heading 1</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="h2">
+            <span class="turn-icon">H₂</span>
+            <span>Heading 2</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="h3">
+            <span class="turn-icon">H₃</span>
+            <span>Heading 3</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="page">
+            <span class="turn-icon">▧</span>
+            <span>Page</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="page-in">
+            <span class="turn-icon">▱</span>
+            <span>Page in</span>
+            <span class="turn-chevron">›</span>
+          </button>
+          <button class="turn-action" type="button" data-turn="bullet">
+            <span class="turn-icon">•–</span>
+            <span>Bulleted list</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="number">
+            <span class="turn-icon">1–</span>
+            <span>Numbered list</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="todo">
+            <span class="turn-icon">☑</span>
+            <span>To-do list</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="toggle">
+            <span class="turn-icon">▸–</span>
+            <span>Toggle list</span>
+            <span></span>
+          </button>
+          <button class="turn-action active" type="button" data-turn="code">
+            <span class="turn-icon">&lt;/&gt;</span>
+            <span>Code</span>
+            <span class="turn-check">✓</span>
+          </button>
+          <button class="turn-action" type="button" data-turn="quote">
+            <span class="turn-icon">“</span>
+            <span>Quote</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="callout">
+            <span class="turn-icon">▣</span>
+            <span>Callout</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="equation">
+            <span class="turn-icon">Σ</span>
+            <span>Block equation</span>
+            <span></span>
+          </button>
+          <button class="turn-action" type="button" data-turn="synced">
+            <span class="turn-icon">ↄ</span>
+            <span>Synced block</span>
+            <span></span>
+          </button>
         </div>
 
         <div class="selection-toolbar">
@@ -1599,7 +1814,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses.</h1>
+          <h1>Designing with edits, not guesses [v1.5.5].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -1876,6 +2091,7 @@
     const aiDock = document.querySelector(".ai-dock");
     const blockTools = document.querySelector(".block-tools");
     const blockTunePopup = document.getElementById("blockTunePopup");
+    const turnIntoPopup = document.getElementById("turnIntoPopup");
     const addBlockBtn = document.getElementById("addBlockBtn");
     const dragBlockBtn = document.getElementById("dragBlockBtn");
     let activeBlock = null;
@@ -3815,7 +4031,9 @@
       activeBlock = block;
       const rect = block.getBoundingClientRect();
       const toolsRect = blockTools.getBoundingClientRect();
-      const x = Math.max(8, rect.left - toolsRect.width - 8);
+      const workspaceRect = workspace.getBoundingClientRect();
+      const gutterLeft = Math.max(8, workspaceRect.left + 14);
+      const x = Math.max(gutterLeft, rect.left - toolsRect.width - 8);
       const y = rect.top + Math.max(0, (Math.min(rect.height, 32) - toolsRect.height) / 2);
 
       blockTools.style.left = `${x}px`;
@@ -3826,22 +4044,56 @@
     function positionBlockTunePopup(block) {
       if (!block || !blockTunePopup) return;
 
-      const rect = block.getBoundingClientRect();
+      const blockRect = block.getBoundingClientRect();
+      const toolsRect = blockTools?.getBoundingClientRect();
+      const anchorRect = toolsRect?.width ? toolsRect : blockRect;
+
+      blockTunePopup.classList.add("show");
+      blockTunePopup.hidden = false;
+
       const popupRect = blockTunePopup.getBoundingClientRect();
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-      const x = Math.max(12, Math.min(rect.left + rect.width / 2 - popupRect.width / 2, viewportWidth - popupRect.width - 12));
-      const y = Math.max(12, Math.min(rect.bottom + 8, viewportHeight - popupRect.height - 12));
+      const canFitRight = anchorRect.right + 8 + popupRect.width <= viewportWidth - 12;
+      const x = canFitRight
+        ? anchorRect.right + 8
+        : Math.max(12, anchorRect.left - popupRect.width - 8);
+      const y = Math.max(12, Math.min(anchorRect.top - 4, viewportHeight - popupRect.height - 12));
 
       blockTunePopup.style.left = `${x}px`;
       blockTunePopup.style.top = `${y}px`;
-      blockTunePopup.classList.add("show");
-      blockTunePopup.hidden = false;
+      blockTunePopup.querySelector(".block-tune-search")?.focus({ preventScroll: true });
+    }
+
+    function positionTurnIntoPopup() {
+      if (!blockTunePopup || !turnIntoPopup) return;
+
+      const menuRect = blockTunePopup.getBoundingClientRect();
+      turnIntoPopup.classList.add("show");
+      turnIntoPopup.hidden = false;
+
+      const popupRect = turnIntoPopup.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const canFitRight = menuRect.right + 8 + popupRect.width <= viewportWidth - 12;
+      const x = canFitRight
+        ? menuRect.right + 8
+        : Math.max(12, menuRect.left - popupRect.width - 8);
+      const y = Math.max(12, Math.min(menuRect.top, viewportHeight - popupRect.height - 12));
+
+      turnIntoPopup.style.left = `${x}px`;
+      turnIntoPopup.style.top = `${y}px`;
+    }
+
+    function hideTurnIntoPopup() {
+      turnIntoPopup?.classList.remove("show");
+      turnIntoPopup?.setAttribute("hidden", "");
     }
 
     function hideBlockTunePopup() {
       blockTunePopup?.classList.remove("show");
       blockTunePopup?.setAttribute("hidden", "");
+      hideTurnIntoPopup();
     }
 
     function moveBlock(block, direction) {
@@ -3926,9 +4178,32 @@
       const block = activeBlock || getCaretBlock();
       if (!block) return;
 
-      tiptapEditor.chain().focus().insertContentAt(tiptapEditor.state.selection.to, "<p></p>").run();
-      requestAnimationFrame(updateBlockToolsFromCaret);
+      const root = getProseMirrorRoot();
+      const nextBlock = document.createElement("p");
+      nextBlock.innerHTML = "<br>";
+
+      if (block.nextSibling) {
+        root.insertBefore(nextBlock, block.nextSibling);
+      } else {
+        root.appendChild(nextBlock);
+      }
+
+      commitEditorDom({ focus: false });
       saveHistory();
+
+      requestAnimationFrame(() => {
+        const blocks = getEditorBlocks();
+        const insertedBlock = blocks[blocks.indexOf(block) + 1] || blocks.find(candidate => candidate.textContent.trim() === "");
+        if (insertedBlock) {
+          placeBlockTools(insertedBlock);
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(insertedBlock);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      });
     });
 
     function startBlockDrag(event) {
@@ -3946,18 +4221,14 @@
         lastX: event.clientX,
         lastY: event.clientY,
         moved: false,
-        armed: false,
+        armed: true,
         targetBlock: null,
-        holdTimer: window.setTimeout(() => {
-          if (!dragState || dragState.pointerId !== event.pointerId) return;
-          dragState.armed = true;
-          dragState.block.classList.add("block-dragging");
-          dragBlockBtn?.classList.add("dragging");
-          showToast("Drag to reorder.");
-        }, isTouchDevice() ? 180 : 90)
+        holdTimer: null
       };
 
       dragBlockBtn?.setPointerCapture?.(event.pointerId);
+      dragState.block.classList.add("block-dragging");
+      dragBlockBtn?.classList.add("dragging");
       placeBlockTools(block);
     }
 
@@ -3991,12 +4262,7 @@
       const deltaX = event.clientX - dragState.startX;
       const deltaY = event.clientY - dragState.startY;
 
-      if (!dragState.armed && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
-        window.clearTimeout(dragState.holdTimer);
-        return;
-      }
-
-      if (!dragState.armed) return;
+      if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) return;
 
       event.preventDefault();
 
@@ -4045,7 +4311,7 @@
         commitEditorDom({ focus: false });
         saveHistory();
         showToast("Block moved.");
-      } else if (!dragState.armed) {
+      } else if (!dragState.moved) {
         positionBlockTunePopup(dragState.block);
       }
 
@@ -4074,19 +4340,58 @@
       button.addEventListener("click", () => {
         const action = button.dataset.action;
         const targetBlock = activeBlock || getCaretBlock();
-        hideBlockTunePopup();
 
         if (!targetBlock) return;
 
-        if (action === "move-up") {
+        if (action === "turn-into") {
+          positionTurnIntoPopup();
+          return;
+        } else if (action === "color") {
+          hideBlockTunePopup();
+          showToast("Color menu coming soon.");
+        } else if (action === "copy-link") {
+          hideBlockTunePopup();
+          navigator.clipboard?.writeText(window.location.href);
+          showToast("Block link copied.");
+        } else if (action === "move-to") {
+          hideBlockTunePopup();
+          showToast("Move to menu coming soon.");
+        } else if (action === "suggest-edits" || action === "ask-ai") {
+          hideBlockTunePopup();
+          showAIModalForSelection();
+        } else if (action === "move-up") {
+          hideBlockTunePopup();
           moveBlock(targetBlock, "up");
         } else if (action === "move-down") {
+          hideBlockTunePopup();
           moveBlock(targetBlock, "down");
         } else if (action === "duplicate") {
+          hideBlockTunePopup();
           duplicateBlock(targetBlock);
         } else if (action === "delete") {
+          hideBlockTunePopup();
           deleteBlock(targetBlock);
         }
+      });
+    });
+
+    document.querySelectorAll(".turn-action").forEach(button => {
+      button.addEventListener("click", () => {
+        const turn = button.dataset.turn;
+        hideBlockTunePopup();
+
+        if (turn === "p") tiptapEditor.chain().focus().setParagraph().run();
+        else if (turn === "h1") tiptapEditor.chain().focus().setHeading({ level: 1 }).run();
+        else if (turn === "h2") tiptapEditor.chain().focus().setHeading({ level: 2 }).run();
+        else if (turn === "h3") tiptapEditor.chain().focus().setHeading({ level: 3 }).run();
+        else if (turn === "bullet") tiptapEditor.chain().focus().toggleBulletList().run();
+        else if (turn === "number") tiptapEditor.chain().focus().toggleOrderedList().run();
+        else if (turn === "todo") tiptapEditor.chain().focus().toggleTaskList().run();
+        else if (turn === "quote") tiptapEditor.chain().focus().toggleBlockquote().run();
+        else if (turn === "code") tiptapEditor.chain().focus().toggleCodeBlock().run();
+        else showToast("Block type coming soon.");
+
+        saveHistory();
       });
     });
 
