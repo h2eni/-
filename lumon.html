@@ -1814,7 +1814,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.1].</h1>
+          <h1>Designing with edits, not guesses [v1.6.2].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -3786,6 +3786,7 @@
         aliases: ["ai", "ask", "assistant"],
         title: "Ask AI",
         run() {
+          removeSlashQuery();
           hideSlashMenu();
           showAIModalForSelection();
         }
@@ -3794,6 +3795,7 @@
         aliases: ["multi", "edit", "multi edit"],
         title: "Multi-edit plan",
         run() {
+          removeSlashQuery();
           hideSlashMenu();
           showAIModalForSelection();
         }
@@ -4902,21 +4904,29 @@
     }
 
     function createFormatPreview(edit, index) {
-      const markdown = {
-        bold: `**${edit.target}**`,
-        italic: `*${edit.target}*`,
-        code: `\`${edit.target}\``,
-        heading_1: `# ${edit.target}`,
-        heading_2: `## ${edit.target}`,
-        quote: `> ${edit.target}`
-      }[edit.format];
+      const formatMap = {
+        bold: { replacement: edit.target, marks: ["bold"] },
+        italic: { replacement: edit.target, marks: ["italic"] },
+        underline: { replacement: edit.target, marks: ["underline"] },
+        code: { replacement: edit.target, marks: ["code"] },
+        heading_1: { replacement: edit.target, blockType: "heading_1" },
+        heading_2: { replacement: edit.target, blockType: "heading_2" },
+        heading_3: { replacement: edit.target, blockType: "heading_3" },
+        bullet_list: { replacement: edit.target, blockType: "bullet_list" },
+        ordered_list: { replacement: edit.target, blockType: "ordered_list" },
+        todo_list: { replacement: edit.target, blockType: "todo_list" },
+        quote: { replacement: edit.target, blockType: "quote" }
+      };
+      const format = formatMap[edit.format];
 
-      if (!markdown) return false;
+      if (!format) return false;
 
       return createDiffPreview({
         type: "replace",
         target: edit.target,
-        replacement: markdown,
+        replacement: format.replacement,
+        blockType: format.blockType,
+        marks: format.marks,
         occurrence: edit.occurrence || 1,
         index
       });
