@@ -1814,7 +1814,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.5.6].</h1>
+          <h1>Designing with edits, not guesses [v1.6.0].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -3215,6 +3215,7 @@
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
             "Use format edits only when formatting is requested or clearly helpful.",
+            "Lists should ALWAYS be in <ul>...</ul>",
             "Keep rationale short and mention occurrence context when useful."
           ].join(" ")
         },
@@ -4665,7 +4666,7 @@
       return transaction.replaceRange(from, to, slice);
     }
 
-    function createDiffToken(action, text, diffIndex, { codeSafe = false } = {}) {
+    function createDiffToken(action, text, diffIndex, { codeSafe = false, html = "" } = {}) {
       const isAdd = action === "add";
       const previewText = normalizeMarkdownText(text);
 
@@ -4682,12 +4683,30 @@
       token.setAttribute("contenteditable", "false");
       token.style.setProperty("--diff-steps", String(Math.max(1, previewText.length)));
 
-      if (isAdd) token.innerHTML = applyInlineMarkdown(markdownToPlainText(previewText));
+      if (isAdd) token.innerHTML = html || markdownToHtml(previewText);
       else token.textContent = previewText;
 
+      const isBlockPreview = /<\/?(p|h1|h2|h3|ul|ol|li|blockquote|pre)\b/i.test(token.innerHTML);
+
       token.style.cssText = isAdd
-        ? `display:inline;vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`
+        ? `display:${isBlockPreview ? "inline-block" : "inline"};vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "pre-wrap"}!important;line-height:inherit!important;margin:0!important;`
         : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`;
+
+      if (isAdd && isBlockPreview) {
+        token.querySelectorAll("p,h1,h2,h3,ul,ol,blockquote,pre").forEach(child => {
+          child.style.margin = "0";
+          child.style.display = "inline";
+          child.style.color = "inherit";
+          child.style.fontSize = "inherit";
+          child.style.lineHeight = "inherit";
+        });
+
+        token.querySelectorAll("li").forEach(child => {
+          child.style.margin = "0";
+          child.style.display = "list-item";
+          child.style.color = "inherit";
+        });
+      }
 
       return token;
     }
@@ -4791,14 +4810,16 @@
       return line("", matched);
     }
 
-    function createPreviewDecorations({ type, target, replacement = "", insertText = "", index = 0, match }) {
+    function createPreviewDecorations({ type, target, replacement = "", insertText = "", blockType, marks = [], index = 0, match }) {
       if (match.docFrom == null) return false;
 
       const codeBlock = getCodeBlockElement(match.node);
       const decorations = [];
       const removeClass = match.inCodeBlock ? "code-diff-remove" : "diff-removed";
       const addClass = match.inCodeBlock ? "code-diff-add" : "diff-added";
-      const tokenOptions = { codeSafe: match.inCodeBlock };
+      const addedText = type === "replace" ? replacement : insertText;
+      const addedHtml = linesToBlockHtml(addedText, { blockType, marks });
+      const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml };
 
       if (type === "replace" || type === "remove") {
         decorations.push(
@@ -4831,6 +4852,8 @@
         target,
         replacement,
         insertText,
+        blockType,
+        marks,
         docFrom: match.docFrom,
         docTo: match.docFrom + target.length,
         previewOnly: true
@@ -4844,7 +4867,7 @@
       setCodeDiffDecorations(decorations);
     }
 
-    function createDiffPreview({ type, target, replacement = "", insertText = "", occurrence = 1, index = 0 }) {
+    function createDiffPreview({ type, target, replacement = "", insertText = "", blockType, marks = [], occurrence = 1, index = 0 }) {
       const match = findTextMatch(target, occurrence);
       if (!match) return false;
 
@@ -4853,6 +4876,8 @@
         target,
         replacement,
         insertText,
+        blockType,
+        marks,
         index,
         match
       });
