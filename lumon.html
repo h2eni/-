@@ -1348,7 +1348,7 @@
 
     .editor span.diff-removed,
     .editor .ProseMirror span.diff-removed {
-      display: inline-block;
+      display: inline;
       color: #8a8f98 !important;
       background: transparent !important;
       border: 0 !important;
@@ -1373,7 +1373,7 @@
     .editor .ProseMirror code span.diff-removed,
     .editor .ProseMirror pre span.diff-removed,
     .editor .ProseMirror .notion-code-block span.diff-removed {
-      display: inline-block !important;
+      display: inline !important;
       color: #8a8f98 !important;
       background: transparent !important;
       border: 0 !important;
@@ -1814,7 +1814,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.5.5].</h1>
+          <h1>Designing with edits, not guesses [v1.5.6].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -1916,6 +1916,7 @@
     import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
     import { createLowlight, all } from "lowlight";
     import { Plugin, PluginKey } from "@tiptap/pm/state";
+    import { DOMParser as ProseMirrorDOMParser } from "@tiptap/pm/model";
     import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
     const lowlight = createLowlight(all);
@@ -2241,6 +2242,29 @@
                       "format"
                     ]
                   },
+                  blockType: {
+                    type: "string",
+                    enum: [
+                      "paragraph",
+                      "heading_1",
+                      "heading_2",
+                      "heading_3",
+                      "bullet_list",
+                      "ordered_list",
+                      "todo_list",
+                      "quote",
+                      "code_block"
+                    ],
+                    description: "Block format to create or apply. Use this for inserted blocks and block-level formatting."
+                  },
+                  marks: {
+                    type: "array",
+                    items: {
+                      type: "string",
+                      enum: ["bold", "italic", "underline", "code"]
+                    },
+                    description: "Inline formatting to apply to inserted or replacement text."
+                  },
                   target: {
                     type: "string",
                     description:
@@ -2262,7 +2286,12 @@
                       "code",
                       "heading_1",
                       "heading_2",
-                      "quote"
+                      "heading_3",
+                      "bullet_list",
+                      "ordered_list",
+                      "todo_list",
+                      "quote",
+                      "underline"
                     ]
                   },
                   occurrence: {
@@ -3181,6 +3210,10 @@
             "Never set the occurrence number to 0 when making changes, such as specifying occurrences.",
             "Preserve meaning unless the instruction asks for a transformation.",
             "Do not output HTML in edit fields.",
+            "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, code_block.",
+            "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
+            "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
+            "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
             "Use format edits only when formatting is requested or clearly helpful.",
             "Keep rationale short and mention occurrence context when useful."
           ].join(" ")
@@ -4526,22 +4559,118 @@
       }
     }
 
-    function normalizeDiffPreviewText(value) {
-      return String(value ?? "")
-        .replace(/\r\n?/g, "\n")
-        .replace(/[ \t]*\n[ \t]*/g, "\n")
-        .replace(/([^\n])\n([^\n])/g, "$1 $2");
+    function normalizeMarkdownText(value) {
+      return String(value ?? "").replace(/\r\n?/g, "\n");
+    }
+
+    function getEditText(edit) {
+      return edit?.replacement ?? edit?.insertText ?? edit?.text ?? "";
+    }
+
+    function normalizeBlockType(blockType = "paragraph") {
+      const aliases = {
+        h1: "heading_1",
+        h2: "heading_2",
+        h3: "heading_3",
+        heading1: "heading_1",
+        heading2: "heading_2",
+        heading3: "heading_3",
+        bullet: "bullet_list",
+        bullets: "bullet_list",
+        numbered: "ordered_list",
+        number: "ordered_list",
+        ordered: "ordered_list",
+        todo: "todo_list",
+        task: "todo_list",
+        quote: "quote",
+        code: "code_block"
+      };
+
+      return aliases[blockType] || blockType || "paragraph";
+    }
+
+    function applyInlineMarkdown(text) {
+      return escapeHtml(text)
+        .replace(/__([^_]+)__/g, "<u>$1</u>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+    }
+
+    function applyMarks(html, marks = []) {
+      const uniqueMarks = Array.from(new Set(marks || []));
+      return uniqueMarks.reduce((result, mark) => {
+        if (mark === "bold") return `<strong>${result}</strong>`;
+        if (mark === "italic") return `<em>${result}</em>`;
+        if (mark === "underline") return `<u>${result}</u>`;
+        if (mark === "code") return `<code>${result}</code>`;
+        return result;
+      }, html);
+    }
+
+    function linesToBlockHtml(value, { blockType = "paragraph", marks = [] } = {}) {
+      const source = normalizeMarkdownText(value);
+      const lines = source.split("\n").filter(line => line.trim());
+      const normalizedBlockType = normalizeBlockType(blockType);
+      const renderInline = line => applyMarks(applyInlineMarkdown(line), marks);
+
+      if (!lines.length) return "";
+
+      if (normalizedBlockType === "bullet_list") {
+        return `<ul>${lines.map(line => `<li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+      }
+
+      if (normalizedBlockType === "ordered_list") {
+        return `<ol>${lines.map(line => `<li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
+      }
+
+      if (normalizedBlockType === "todo_list") {
+        return `<ul data-type="taskList">${lines.map(line => `<li data-type="taskItem" data-checked="false">${renderInline(line.replace(/^[-*]\s+\[[ x]\]\s+/i, "").replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+      }
+
+      return lines.map(line => {
+        if (normalizedBlockType === "heading_1" || /^#\s+/.test(line)) return `<h1>${renderInline(line.replace(/^#\s+/, ""))}</h1>`;
+        if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
+        if (normalizedBlockType === "heading_3" || /^###\s+/.test(line)) return `<h3>${renderInline(line.replace(/^###\s+/, ""))}</h3>`;
+        if (normalizedBlockType === "quote" || /^>\s+/.test(line)) return `<blockquote>${renderInline(line.replace(/^>\s+/, ""))}</blockquote>`;
+        if (normalizedBlockType === "code_block") return `<pre><code>${escapeHtml(line)}</code></pre>`;
+        if (/^[-*]\s+/.test(line)) return `<ul><li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
+        if (/^\d+[.)]\s+/.test(line)) return `<ol><li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
+        return `<p>${renderInline(line)}</p>`;
+      }).join("");
+    }
+
+    function markdownToHtml(value, options = {}) {
+      return linesToBlockHtml(value, options);
+    }
+
+    function markdownToPlainText(value) {
+      return normalizeMarkdownText(value)
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/^>\s+/gm, "")
+        .replace(/^[-*]\s+\[[ x]\]\s+/gim, "")
+        .replace(/^[-*]\s+/gm, "")
+        .replace(/^\d+[.)]\s+/gm, "")
+        .replace(/__([^_]+)__/g, "$1")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/`([^`]+)`/g, "$1");
+    }
+
+    function insertHtmlAt(transaction, html, from, to = from) {
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      const parser = ProseMirrorDOMParser.fromSchema(tiptapEditor.schema);
+      const slice = parser.parseSlice(container, { preserveWhitespace: false });
+      return transaction.replaceRange(from, to, slice);
     }
 
     function createDiffToken(action, text, diffIndex, { codeSafe = false } = {}) {
       const isAdd = action === "add";
-      const previewText = codeSafe
-        ? String(text ?? "").replace(/\r\n?/g, "\n")
-        : normalizeDiffPreviewText(text);
+      const previewText = normalizeMarkdownText(text);
 
-      // Normal text can preview with inline spans. CodeBlockLowlight/ProseMirror
-      // may strip unsupported inline DOM inside code blocks, so code previews use
-      // an out-of-band card instead.
+      // Additions render a compact Markdown preview, preserving line breaks,
+      // headings, bold, italic, inline code, quotes, and list-like lines.
       const token = document.createElement("span");
 
       token.className = isAdd ? "diff-added" : "diff-removed";
@@ -4552,12 +4681,13 @@
       token.dataset.diffTag = "span";
       token.setAttribute("contenteditable", "false");
       token.style.setProperty("--diff-steps", String(Math.max(1, previewText.length)));
-      token.textContent = previewText;
 
-      const preserveBreaksStyle = codeSafe ? "white-space:pre-wrap!important;" : "";
+      if (isAdd) token.innerHTML = applyInlineMarkdown(markdownToPlainText(previewText));
+      else token.textContent = previewText;
+
       token.style.cssText = isAdd
-        ? `display:inline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;${preserveBreaksStyle}`
-        : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;${preserveBreaksStyle}`;
+        ? `display:inline;vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`
+        : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`;
 
       return token;
     }
@@ -4735,19 +4865,21 @@
     }
 
     function createFormatPreview(edit, index) {
-      const label = {
-        bold: "bold",
-        italic: "italic",
-        code: "code",
-        heading_1: "heading 1",
-        heading_2: "heading 2",
-        quote: "quote"
-      }[edit.format] || "format";
+      const markdown = {
+        bold: `**${edit.target}**`,
+        italic: `*${edit.target}*`,
+        code: `\`${edit.target}\``,
+        heading_1: `# ${edit.target}`,
+        heading_2: `## ${edit.target}`,
+        quote: `> ${edit.target}`
+      }[edit.format];
+
+      if (!markdown) return false;
 
       return createDiffPreview({
-        type: "insert_after",
+        type: "replace",
         target: edit.target,
-        insertText: ` (${label})`,
+        replacement: markdown,
         occurrence: edit.occurrence || 1,
         index
       });
@@ -4765,14 +4897,29 @@
         const from = edit.docFrom;
         const to = from + edit.target.length;
 
+        const html = linesToBlockHtml(getEditText(edit), {
+          blockType: edit.blockType,
+          marks: edit.marks
+        });
+
         if (edit.type === "replace") {
-          transaction = transaction.insertText(edit.replacement || "", from, to);
+          transaction = html
+            ? insertHtmlAt(transaction, html, from, to)
+            : transaction.delete(from, to);
         } else if (edit.type === "remove") {
           transaction = transaction.delete(from, to);
         } else if (edit.type === "insert_before") {
-          transaction = transaction.insertText(edit.insertText || "", from);
+          transaction = html
+            ? insertHtmlAt(transaction, html, from)
+            : transaction.insertText(markdownToPlainText(edit.insertText || ""), from);
         } else if (edit.type === "insert_after") {
-          transaction = transaction.insertText(edit.insertText || "", to);
+          transaction = html
+            ? insertHtmlAt(transaction, html, to)
+            : transaction.insertText(markdownToPlainText(edit.insertText || ""), to);
+        } else if (edit.type === "format") {
+          transaction = html
+            ? insertHtmlAt(transaction, html, from, to)
+            : transaction.insertText(markdownToPlainText(edit.target || ""), from, to);
         }
       });
 
