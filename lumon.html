@@ -1814,7 +1814,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.0].</h1>
+          <h1>Designing with edits, not guesses [v1.6.1].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -3211,6 +3211,7 @@
             "Preserve meaning unless the instruction asks for a transformation.",
             "Do not output HTML in edit fields.",
             "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, code_block.",
+            "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
@@ -4498,6 +4499,8 @@
           type: "replace",
           target: edit.target,
           replacement: edit.replacement || "",
+          blockType: edit.blockType,
+          marks: edit.marks,
           occurrence,
           index
         });
@@ -4508,6 +4511,8 @@
           type: edit.type,
           target: edit.target,
           insertText: edit.text || "",
+          blockType: edit.blockType,
+          marks: edit.marks,
           occurrence,
           index
         });
@@ -4686,7 +4691,7 @@
       if (isAdd) token.innerHTML = html || markdownToHtml(previewText);
       else token.textContent = previewText;
 
-      const isBlockPreview = /<\/?(p|h1|h2|h3|ul|ol|li|blockquote|pre)\b/i.test(token.innerHTML);
+      const isBlockPreview = token.dataset.diffBlockPreview === "true";
 
       token.style.cssText = isAdd
         ? `display:${isBlockPreview ? "inline-block" : "inline"};vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "pre-wrap"}!important;line-height:inherit!important;margin:0!important;`
@@ -4818,7 +4823,13 @@
       const removeClass = match.inCodeBlock ? "code-diff-remove" : "diff-removed";
       const addClass = match.inCodeBlock ? "code-diff-add" : "diff-added";
       const addedText = type === "replace" ? replacement : insertText;
-      const addedHtml = linesToBlockHtml(addedText, { blockType, marks });
+      const normalizedBlockType = normalizeBlockType(blockType);
+      const shouldRenderBlockPreview =
+        Boolean(blockType && normalizedBlockType !== "paragraph") ||
+        normalizeMarkdownText(addedText).includes("\n");
+      const addedHtml = shouldRenderBlockPreview
+        ? linesToBlockHtml(addedText, { blockType, marks })
+        : applyMarks(applyInlineMarkdown(markdownToPlainText(addedText)), marks);
       const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml };
 
       if (type === "replace" || type === "remove") {
@@ -4839,6 +4850,7 @@
             const token = createDiffToken("add", type === "replace" ? replacement : insertText, index, tokenOptions);
             token.className = addClass;
             token.dataset.diffAction = "preview";
+            token.dataset.diffBlockPreview = shouldRenderBlockPreview ? "true" : "false";
             return token;
           }, { side: type === "insert_before" ? -1 : 1 })
         );
