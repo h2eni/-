@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.6.5</title>
+      <title>Lumon [ BETA ] v1.6.6</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -534,6 +534,7 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 14px;
       line-height: 1.55;
+      position: relative;
     }
 
     .editor pre code,
@@ -547,6 +548,70 @@
       color: inherit;
       font-size: inherit;
       white-space: pre;
+    }
+
+    .code-block-actions {
+      position: sticky;
+      top: 0;
+      right: 0;
+      z-index: 5;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      float: right;
+      margin: -8px -8px 8px 10px;
+      pointer-events: none;
+    }
+
+    .code-block-action,
+    .code-language-option {
+      min-height: 26px;
+      padding: 0 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(24, 24, 27, 0.88);
+      color: #e4e4e7;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      pointer-events: auto;
+      backdrop-filter: blur(12px);
+    }
+
+    .code-block-action:hover,
+    .code-language-option:hover {
+      background: rgba(63, 63, 70, 0.94);
+      color: white;
+    }
+
+    .code-language-menu {
+      position: absolute;
+      top: 30px;
+      right: 58px;
+      z-index: 10;
+      display: none;
+      width: 150px;
+      max-height: 220px;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(24, 24, 27, 0.98);
+      box-shadow: 0 16px 42px rgba(0, 0, 0, 0.38);
+      overflow-y: auto;
+      pointer-events: auto;
+    }
+
+    .code-language-menu.show {
+      display: grid;
+      gap: 4px;
+    }
+
+    .code-language-option {
+      width: 100%;
+      justify-content: flex-start;
+      text-align: left;
+      background: transparent;
     }
 
     .editor pre .hljs-comment,
@@ -1928,7 +1993,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.5].</h1>
+          <h1>Designing with edits, not guesses [v1.6.6].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2022,7 +2087,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.5</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.6</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2189,15 +2254,33 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.6.5";
+    const APP_VERSION = "1.6.6";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_5";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_5";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_6";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_6";
     const WHATS_NEW_ITEMS = [
-      "Fixed AI edits inside code blocks so single newlines stay inside the code block.",
-      "Applied code-block edit acceptance as plain text instead of paragraph HTML.",
-      "Preserved CodeBlock Lowlight syntax highlighting and horizontal scrolling.",
+      "Added a top-right code block toolbar with language, copy, and format controls.",
+      "Added a language dropdown for switching syntax highlighting per code block.",
+      "Added one-click code copying and lightweight code prettifying.",
       "Updated version-aware LocalStorage keys for this release."
+    ];
+    const CODE_LANGUAGE_OPTIONS = [
+      ["plaintext", "Plain text"],
+      ["javascript", "JavaScript"],
+      ["typescript", "TypeScript"],
+      ["html", "HTML"],
+      ["css", "CSS"],
+      ["json", "JSON"],
+      ["lua", "Lua"],
+      ["python", "Python"],
+      ["bash", "Bash"],
+      ["java", "Java"],
+      ["cpp", "C++"],
+      ["csharp", "C#"],
+      ["ruby", "Ruby"],
+      ["go", "Go"],
+      ["rust", "Rust"],
+      ["sql", "SQL"]
     ];
 
     function getMistralApiKey() {
@@ -2336,6 +2419,8 @@
       getSavedScripts,
       saveScript
     };
+
+    requestAnimationFrame(renderCodeBlockControls);
 
     showWhatsNewModal();
 
@@ -2584,6 +2669,122 @@
       showToast.timer = setTimeout(() => {
         toast.classList.remove("show");
       }, 3200);
+    }
+
+    function getLanguageLabel(language = "plaintext") {
+      const normalized = String(language || "plaintext").toLowerCase();
+      return CODE_LANGUAGE_OPTIONS.find(([value]) => value === normalized)?.[1] || normalized.replace(/^\w/, char => char.toUpperCase());
+    }
+
+    function getCodeBlockLanguage(pre) {
+      const code = pre?.querySelector?.("code");
+      const className = `${pre?.className || ""} ${code?.className || ""}`;
+      const classLanguage = className.match(/(?:language|lang)-([a-z0-9_+-]+)/i)?.[1];
+      return (pre?.dataset.language || code?.dataset.language || classLanguage || "plaintext").toLowerCase();
+    }
+
+    function findCodeBlockPosition(pre) {
+      if (!pre || !tiptapEditor?.view) return null;
+
+      try {
+        const pos = tiptapEditor.view.posAtDOM(pre, 0);
+        for (const candidate of [pos, pos - 1, pos + 1]) {
+          if (candidate == null || candidate < 0) continue;
+          const node = tiptapEditor.state.doc.nodeAt(candidate);
+          if (node?.type?.name === "codeBlock") return { pos: candidate, node };
+        }
+      } catch {
+        return null;
+      }
+
+      return null;
+    }
+
+    function setCodeBlockLanguage(pre, language) {
+      const match = findCodeBlockPosition(pre);
+      if (!match) return false;
+
+      tiptapEditor.view.dispatch(
+        tiptapEditor.state.tr.setNodeMarkup(match.pos, undefined, {
+          ...match.node.attrs,
+          language
+        })
+      );
+      renderCodeBlockControls();
+      saveHistory();
+      return true;
+    }
+
+    function getCodeText(pre) {
+      return pre?.querySelector?.("code")?.innerText || "";
+    }
+
+    function prettifyCode(source, language = "plaintext") {
+      const normalizedLanguage = String(language || "").toLowerCase();
+      const lines = normalizeMarkdownText(source)
+        .split("\n")
+        .map(line => line.trim())
+        .filter((line, index, all) => line || index < all.length - 1);
+
+      let depth = 0;
+      const decreasePattern = normalizedLanguage === "lua"
+        ? /^(end|else|elseif|until)\b/i
+        : /^([}\])]|<\/)/;
+      const increasePattern = normalizedLanguage === "lua"
+        ? /\b(then|do|function)\b|repeat$/i
+        : /[{[]\s*$/;
+
+      return lines.map(line => {
+        if (decreasePattern.test(line)) depth = Math.max(0, depth - 1);
+        const formatted = `${"  ".repeat(depth)}${line}`;
+        if (increasePattern.test(line) && !/\b(end)\b/i.test(line)) depth += 1;
+        return formatted;
+      }).join("\n");
+    }
+
+    function formatCodeBlock(pre) {
+      const match = findCodeBlockPosition(pre);
+      if (!match) return false;
+
+      const formatted = prettifyCode(getCodeText(pre), getCodeBlockLanguage(pre));
+      const from = match.pos + 1;
+      const to = from + match.node.content.size;
+      tiptapEditor.view.dispatch(tiptapEditor.state.tr.insertText(formatted, from, to));
+      saveHistory();
+      showToast("Code formatted.");
+      return true;
+    }
+
+    async function copyCodeBlock(pre) {
+      await navigator.clipboard?.writeText(getCodeText(pre));
+      showToast("Code copied.");
+    }
+
+    function renderCodeBlockControls() {
+      const root = getProseMirrorRoot();
+      if (!root) return;
+
+      root.querySelectorAll(".code-block-actions").forEach(node => node.remove());
+      root.querySelectorAll("pre, .notion-code-block").forEach(pre => {
+        if (!pre.querySelector("code")) return;
+        const language = getCodeBlockLanguage(pre);
+        pre.dataset.language = language;
+
+        const controls = document.createElement("div");
+        controls.className = "code-block-actions";
+        controls.contentEditable = "false";
+        controls.innerHTML = `
+          <button class="code-block-action code-language-toggle" type="button">${escapeHtml(getLanguageLabel(language))}</button>
+          <button class="code-block-action code-copy" type="button" title="Copy code">Copy</button>
+          <button class="code-block-action code-format" type="button" title="Format code">⚡</button>
+          <div class="code-language-menu">
+            ${CODE_LANGUAGE_OPTIONS.map(([value, label]) => `
+              <button class="code-language-option" type="button" data-language="${escapeHtml(value)}">${escapeHtml(label)}</button>
+            `).join("")}
+          </div>
+        `;
+        pre.prepend(controls);
+      });
     }
 
     function escapeHtml(value) {
@@ -4402,6 +4603,32 @@
     editor.addEventListener("mouseup", updateBlockToolsFromCaret);
     editor.addEventListener("focus", updateBlockToolsFromCaret);
     editor.addEventListener("click", event => {
+      const codeControl = event.target.closest(".code-block-action, .code-language-option");
+      if (codeControl) {
+        event.preventDefault();
+        const pre = codeControl.closest("pre, .notion-code-block");
+
+        if (codeControl.classList.contains("code-language-toggle")) {
+          pre.querySelector(".code-language-menu")?.classList.toggle("show");
+          return;
+        }
+
+        if (codeControl.classList.contains("code-language-option")) {
+          setCodeBlockLanguage(pre, codeControl.dataset.language || "plaintext");
+          return;
+        }
+
+        if (codeControl.classList.contains("code-copy")) {
+          copyCodeBlock(pre);
+          return;
+        }
+
+        if (codeControl.classList.contains("code-format")) {
+          formatCodeBlock(pre);
+          return;
+        }
+      }
+
       if (!event.target.closest(".block-tune-popup") && !event.target.closest(".block-tools")) {
         hideBlockTunePopup();
       }
