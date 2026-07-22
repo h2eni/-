@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.6.6</title>
+      <title>Lumon [ BETA ] v1.6.7</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -520,7 +520,7 @@
     .editor pre,
     .editor .notion-code-block {
       margin: 18px 0;
-      padding: 16px;
+      padding: 46px 16px 16px;
       max-width: 100%;
       border: 1px solid #333;
       border-radius: 10px;
@@ -551,15 +551,12 @@
     }
 
     .code-block-actions {
-      position: sticky;
-      top: 0;
-      right: 0;
+      position: absolute;
+      top: 10px;
+      right: 10px;
       z-index: 5;
       display: flex;
-      justify-content: flex-end;
       gap: 6px;
-      float: right;
-      margin: -8px -8px 8px 10px;
       pointer-events: none;
     }
 
@@ -577,6 +574,7 @@
       line-height: 1;
       pointer-events: auto;
       backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
     }
 
     .code-block-action:hover,
@@ -650,15 +648,15 @@
       z-index: 998;
       left: 0;
       top: 0;
-      width: 318px;
-      max-height: min(360px, calc(100vh - 24px));
+      width: min(420px, calc(100vw - 28px));
+      max-height: min(560px, calc(100vh - 28px));
       display: none;
-      padding: 8px;
-      border: 1px solid var(--border);
+      padding: 14px 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 17px;
-      background: rgba(32, 32, 32, 0.96);
-      box-shadow: 0 24px 74px rgba(0, 0, 0, 0.45);
-      overflow: auto;
+      background: rgba(33, 33, 33, 0.98);
+      box-shadow: 0 24px 74px rgba(0, 0, 0, 0.48);
+      overflow: hidden;
       backdrop-filter: blur(18px);
     }
 
@@ -667,21 +665,30 @@
     }
 
     .slash-label {
-      padding: 7px 9px 5px;
-      color: var(--muted-2);
-      font-size: 11px;
+      padding: 4px 24px 16px;
+      color: #a3a3a3;
+      font-size: 16px;
       font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+
+    .slash-results {
+      max-height: min(430px, calc(100vh - 138px));
+      overflow-y: auto;
+      padding: 0 14px 12px;
+      scrollbar-width: thin;
     }
 
     .slash-item {
-      display: flex;
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
-      padding: 10px;
-      border-radius: 11px;
+      min-height: 42px;
+      padding: 5px 10px;
+      border-radius: 9px;
       background: transparent;
       text-align: left;
     }
@@ -692,29 +699,56 @@
     }
 
     .slash-icon {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       flex: 0 0 auto;
       display: grid;
       place-items: center;
-      border-radius: 9px;
-      background: #303030;
+      border-radius: 8px;
+      background: transparent;
       font-weight: 800;
-      color: #f4f4f5;
+      color: #e5e5e5;
+      font-size: 22px;
     }
 
     .slash-title {
       display: block;
       color: white;
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 750;
+      letter-spacing: -0.025em;
     }
 
     .slash-desc {
       display: block;
       margin-top: 2px;
-      color: var(--muted);
-      font-size: 12px;
+      color: #8a8a8a;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .slash-shortcut {
+      color: #8a8a8a;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .slash-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      padding: 0 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f4f4f5;
+      font-size: 17px;
+      font-weight: 760;
+      letter-spacing: -0.025em;
+    }
+
+    .slash-footer span:last-child {
+      color: #8a8a8a;
+      font-weight: 750;
     }
 
     .ai-status-bar {
@@ -1993,7 +2027,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.6].</h1>
+          <h1>Designing with edits, not guesses [v1.6.7].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2087,7 +2121,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.6</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.7</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2254,14 +2288,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.6.6";
+    const APP_VERSION = "1.6.7";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_6";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_6";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_7";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_7";
     const WHATS_NEW_ITEMS = [
-      "Added a top-right code block toolbar with language, copy, and format controls.",
-      "Added a language dropdown for switching syntax highlighting per code block.",
-      "Added one-click code copying and lightweight code prettifying.",
+      "Made code block controls visible in the top-right corner.",
+      "Refined the slash menu layout to match the Notion-style filtered results menu.",
+      "Kept the existing slash menu options while improving spacing, icons, and footer.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -2407,6 +2441,7 @@
       onUpdate() {
         aiMeta.textContent = "Editing";
         debounceSaveHistory();
+        requestAnimationFrame(renderCodeBlockControls);
       },
       onSelectionUpdate() {
         requestAnimationFrame(updateSelectionUI);
@@ -4289,34 +4324,41 @@
 
     function renderSlashMenu() {
       const filtered = getFilteredSlashItems();
-      slashMenu.innerHTML = `<div class="slash-label">AI blocks</div>`;
+      slashMenu.innerHTML = `
+        <div class="slash-label">Filtered results</div>
+        <div class="slash-results"></div>
+        <div class="slash-footer"><span>Close menu</span><span>esc</span></div>
+      `;
+      const results = slashMenu.querySelector(".slash-results");
 
       filtered.forEach((command, index) => {
         const button = document.createElement("button");
         button.className = `slash-item${index === slashIndex ? " active" : ""}`;
         button.type = "button";
         button.innerHTML = `
-          <span class="slash-icon">${command.title.includes("AI") || command.title.includes("Multi") ? "✦" : "T"}</span>
+          <span class="slash-icon">${command.title.includes("AI") ? "✣" : command.title.includes("Multi") ? "⇄" : command.title.includes("Header") ? "H" : command.title.includes("list") ? "☷" : "T"}</span>
           <span>
             <span class="slash-title">${escapeHtml(command.title)}</span>
             <span class="slash-desc">/${escapeHtml(command.aliases[0])}</span>
           </span>
+          <span class="slash-shortcut">${command.title === "Ask AI" ? "⌘J" : ""}</span>
         `;
         button.addEventListener("mousedown", event => {
           event.preventDefault();
           runSlashCommand(index);
         });
-        slashMenu.appendChild(button);
+        results.appendChild(button);
       });
 
       if (!filtered.length) {
-        slashMenu.insertAdjacentHTML("beforeend", `
+        results.insertAdjacentHTML("beforeend", `
           <button class="slash-item active" type="button">
             <span class="slash-icon">?</span>
             <span>
               <span class="slash-title">No results</span>
               <span class="slash-desc">Press Enter to close</span>
             </span>
+            <span class="slash-shortcut"></span>
           </button>
         `);
       }
