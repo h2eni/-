@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.7</title>
+      <title>Lumon [ BETA ] v1.7.8</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2192,7 +2192,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.7].</h1>
+          <h1>Designing with edits, not guesses [v1.7.8].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2286,7 +2286,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.7</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.8</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2453,14 +2453,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.7";
+    const APP_VERSION = "1.7.8";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_7";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_7";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_8";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_8";
     const WHATS_NEW_ITEMS = [
-      "Refined generated-list diff previews so list rows read more clearly.",
-      "Cleaned up slash-command text before AI insert previews are generated.",
-      "Improved list insertion acceptance so generated lists land as block content.",
+      "Fixed /ai no-selection mode so the caret block becomes the edit scope.",
+      "Kept paragraph blocks and each list item counted as distinct AI-editable blocks.",
+      "Added exact block snapshots for AI planning without treating list wrappers as blocks.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -3389,16 +3389,24 @@
         resetFollowUpState();
       }
 
-      if (!saveCurrentSelection() && !savedSelectionRange) {
+      const hasSelection = saveCurrentSelection();
+      const caretBlock = getCaretBlock();
+
+      if (!hasSelection && !savedSelectionRange && !caretBlock) {
         hideSelectionToolbar();
         hideAIModal();
-        showToast("Select text first, then press Multi-edit.");
+        showToast("Place the cursor in a block first, then press Multi-edit.");
         return;
       }
 
-      restoreSavedSelection();
+      if (hasSelection || savedSelectionRange) {
+        restoreSavedSelection();
+      }
+
       hideSelectionToolbar();
       aiDock.classList.add("show");
+      aiDock.dataset.scopeMode = hasSelection || savedSelectionRange ? "selection" : "block";
+      aiDock.dataset.scopeBlock = !hasSelection && caretBlock?.matches?.("li") ? "list-item" : "block";
 
       positionAIModal();
 
@@ -3411,7 +3419,44 @@
     function getDocumentContents() {
       return {
         text: tiptapEditor.getText(),
-        html: tiptapEditor.getHTML()
+        html: tiptapEditor.getHTML(),
+        blocks: getDocumentBlockSnapshot()
+      };
+    }
+
+    function getBlockPlainText(block) {
+      return String(block?.innerText || block?.textContent || "").trim();
+    }
+
+    function getDocumentBlockSnapshot() {
+      return getEditorBlocks().map((block, index) => {
+        const tag = block.tagName?.toLowerCase?.() || "block";
+        const parentList = block.matches?.("li") ? block.closest("ul, ol") : null;
+        return {
+          index: index + 1,
+          type: block.matches?.("li") ? "list_item" : tag,
+          text: getBlockPlainText(block),
+          isListItem: block.matches?.("li") || false,
+          parentListType: parentList?.tagName?.toLowerCase?.() || null
+        };
+      });
+    }
+
+    function getCaretBlockScope() {
+      const block = getCaretBlock();
+      if (!block) return null;
+
+      return {
+        selectedText: getBlockPlainText(block),
+        selectedHtml: block.outerHTML,
+        scopeLabel: block.matches("li") ? "Current list item block" : "Current block",
+        isContinuation: false,
+        blockSnapshot: {
+          index: getEditorBlocks().indexOf(block) + 1,
+          type: block.matches("li") ? "list_item" : block.tagName.toLowerCase(),
+          isListItem: block.matches("li"),
+          text: getBlockPlainText(block)
+        }
       };
     }
 
@@ -3461,6 +3506,8 @@
         documentLength: doc.content.size,
         occurrenceCountInDocument,
         parentBlockType,
+        caretBlock: getCaretBlockScope()?.blockSnapshot || null,
+        blocks: getDocumentBlockSnapshot(),
         contextBeforeCursor,
         contextAfterCursor
       };
@@ -3820,8 +3867,10 @@
             "Use format edits only when formatting is requested or clearly helpful.",
             "Lists should ALWAYS be in <ul>...</ul>, but never treat the <ul> or <ol> wrapper as the editable block.",
             "Each generated list item must be its own independent <li> block. Four generated list items means four blocks, not one list block.",
+            "When no text is selected and /ai opens the modal, use the caret block as the active scope. A paragraph is one block, and each <li> is one separate block even when the list has multiple items.",
             "When inserting a generated list after slash-command text such as /ai, treat the slash command as UI-only trigger text and do not preserve it in the preview or accepted document.",
             "Each individual <li> inside a <ul>...</ul> or <ol>...</ol> counts as one individual block for selection, block tools, moving, duplicating, deletion, previewing, and applying edits.",
+            "Never count a <ul> or <ol> wrapper as a single block in no-selection mode; use only its individual <li> children as block units.",
             "Keep rationale short and mention occurrence context when useful."
           ].join(" ")
         },
@@ -4262,14 +4311,21 @@
         };
       }
 
+      const caretScope = getCaretBlockScope();
+      if (caretScope && aiDock?.dataset.scopeMode === "block") {
+        return caretScope;
+      }
+
       // Follow-up prompts should still work while the modal is open, even if
       // focus moved from the editor into the composer and the browser selection
-      // disappeared. If no last edited region exists, fall back to the full document.
+      // disappeared. If no last edited region exists, fall back to block snapshots
+      // instead of treating list wrappers as one block.
       return {
-        selectedText: tiptapEditor.getText(),
+        selectedText: getDocumentBlockSnapshot().map(block => block.text).filter(Boolean).join("\n"),
         selectedHtml: tiptapEditor.getHTML(),
-        scopeLabel: "Full document follow-up",
-        isContinuation: false
+        scopeLabel: "Full document block mode",
+        isContinuation: false,
+        blockSnapshot: getDocumentBlockSnapshot()
       };
     }
 
