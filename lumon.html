@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.1</title>
+      <title>Lumon [ BETA ] v1.7.2</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2191,7 +2191,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.1].</h1>
+          <h1>Designing with edits, not guesses [v1.7.2].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2285,7 +2285,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.1</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.2</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2452,14 +2452,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.1";
+    const APP_VERSION = "1.7.2";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_1";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_1";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_2";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_2";
     const WHATS_NEW_ITEMS = [
-      "Aligned list-item block controls to the list gutter.",
-      "Kept each individual list item selectable as its own block.",
-      "Improved hover placement for nested list rows.",
+      "Counted every list item as its own block.",
+      "Kept list-item move, duplicate, and delete actions inside the parent list.",
+      "Improved selection behavior for individual list rows.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -4754,7 +4754,10 @@
     function moveBlock(block, direction) {
       if (!block || !editor.contains(block)) return false;
 
-      const blocks = getEditorBlocks();
+      const isListItem = block.matches("li");
+      const blocks = isListItem
+        ? Array.from(block.parentElement?.children || []).filter(candidate => candidate.matches?.("li"))
+        : getEditorBlocks();
       const index = blocks.indexOf(block);
       if (index === -1) return false;
 
@@ -4762,13 +4765,12 @@
       const targetBlock = blocks[targetIndex];
       if (!targetBlock) return false;
 
-      const root = getProseMirrorRoot();
       if (direction === "up") {
-        root.insertBefore(block, targetBlock);
+        targetBlock.parentNode.insertBefore(block, targetBlock);
       } else if (targetBlock.nextSibling) {
-        root.insertBefore(block, targetBlock.nextSibling);
+        targetBlock.parentNode.insertBefore(block, targetBlock.nextSibling);
       } else {
-        root.appendChild(block);
+        targetBlock.parentNode.appendChild(block);
       }
 
       commitEditorDom({ focus: false });
@@ -4860,11 +4862,14 @@
       if (!block) return;
 
       const root = getProseMirrorRoot();
-      const nextBlock = document.createElement("p");
+      const isListItem = block.matches("li");
+      const nextBlock = document.createElement(isListItem ? "li" : "p");
       nextBlock.innerHTML = "<br>";
 
       if (block.nextSibling) {
-        root.insertBefore(nextBlock, block.nextSibling);
+        block.parentNode.insertBefore(nextBlock, block.nextSibling);
+      } else if (isListItem) {
+        block.parentNode.appendChild(nextBlock);
       } else {
         root.appendChild(nextBlock);
       }
@@ -4979,12 +4984,18 @@
       if (dragState.armed && dragState.moved && dragState.targetBlock) {
         const targetRect = dragState.targetBlock.getBoundingClientRect();
         const before = dragState.lastY < targetRect.top + targetRect.height / 2;
+        const sourceIsListItem = dragState.block.matches("li");
+        const targetIsListItem = dragState.targetBlock.matches("li");
+        const canMoveWithinList = sourceIsListItem && targetIsListItem && dragState.block.parentElement === dragState.targetBlock.parentElement;
         const root = getProseMirrorRoot();
+        const insertionParent = canMoveWithinList ? dragState.targetBlock.parentNode : root;
 
         if (before) {
-          root.insertBefore(dragState.block, dragState.targetBlock);
-        } else if (dragState.targetBlock.nextSibling) {
-          root.insertBefore(dragState.block, dragState.targetBlock.nextSibling);
+          insertionParent.insertBefore(dragState.block, dragState.targetBlock);
+        } else if (dragState.targetBlock.nextSibling && canMoveWithinList) {
+          insertionParent.insertBefore(dragState.block, dragState.targetBlock.nextSibling);
+        } else if (canMoveWithinList) {
+          insertionParent.appendChild(dragState.block);
         } else {
           root.appendChild(dragState.block);
         }
