@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.6.8</title>
+      <title>Lumon [ BETA ] v1.6.9</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -1154,6 +1154,163 @@
       background: rgba(255, 255, 255, 0.12);
     }
 
+    .ai-dock {
+      width: min(720px, calc(100vw - 72px));
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(39, 39, 42, 0.96), rgba(18, 18, 20, 0.96)),
+        radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.22), transparent 34%),
+        radial-gradient(circle at 88% 20%, rgba(167, 139, 250, 0.18), transparent 32%);
+      box-shadow:
+        0 22px 70px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 0 54px rgba(96, 165, 250, 0.12);
+      backdrop-filter: blur(24px) saturate(1.12);
+    }
+
+    .ai-dock::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.32), rgba(167, 139, 250, 0.18), transparent 58%);
+      opacity: 0.55;
+      filter: blur(18px);
+      pointer-events: none;
+    }
+
+    .ai-dock:focus-within {
+      border-color: rgba(147, 197, 253, 0.36);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.54),
+        0 0 0 1px rgba(147, 197, 253, 0.18),
+        0 0 72px rgba(96, 165, 250, 0.18);
+    }
+
+    .ai-dock:has(.multi-edit-preview:not(:empty)) {
+      border-radius: 26px;
+    }
+
+    .ai-top {
+      display: flex;
+      margin: 0 0 8px;
+      padding: 6px 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: transparent;
+    }
+
+    .ai-title {
+      color: #f4f4f5;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .ai-title-dot {
+      width: 9px;
+      height: 9px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 0 18px rgba(96, 165, 250, 0.66);
+    }
+
+    .ai-meta {
+      max-width: 45%;
+      overflow: hidden;
+      color: #a1a1aa;
+      font-size: 12px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .multi-edit-preview {
+      gap: 7px;
+      max-height: 260px;
+      padding: 0 2px 8px;
+      scrollbar-width: thin;
+    }
+
+    .edit-row {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .composer {
+      position: relative;
+      gap: 8px;
+      padding: 8px 8px 8px 0;
+      border-radius: 18px;
+    }
+
+    .spark {
+      position: absolute;
+      left: -44px;
+      top: 50%;
+      width: 34px;
+      min-width: 34px;
+      height: 34px;
+      transform: translateY(-50%);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background:
+        radial-gradient(circle at 34% 26%, #ffffff, #e5e7eb 48%, #cbd5e1);
+      color: #18181b;
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.36),
+        0 0 28px rgba(96, 165, 250, 0.28);
+    }
+
+    .composer input {
+      height: 34px;
+      color: #f8fafc;
+      font-size: 14px;
+      font-weight: 520;
+    }
+
+    .composer input::placeholder {
+      color: #8f8f98;
+    }
+
+    .send {
+      min-width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
+      color: #d4d4d8;
+      transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .send:hover {
+      background: #e5e7eb;
+      color: #18181b;
+      transform: translateY(-1px);
+    }
+
+    .quick-actions {
+      gap: 6px;
+      padding: 2px 0 0;
+    }
+
+    .quick-action {
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.045);
+      color: #d4d4d8;
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .quick-action:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+    }
+
     .quick-action.accept {
       background: var(--green-strong);
       color: white;
@@ -2034,7 +2191,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.8].</h1>
+          <h1>Designing with edits, not guesses [v1.6.9].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2128,7 +2285,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.8</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.9</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2295,14 +2452,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.6.8";
+    const APP_VERSION = "1.6.9";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_8";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_8";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_9";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_9";
     const WHATS_NEW_ITEMS = [
-      "Reduced the slash menu size while keeping the Notion-style filtered results layout.",
-      "Moved the AI modal icon outside the input container.",
-      "Tightened the AI modal left offset and refreshed the page spacing.",
+      "Gave the AI modal a brighter layered glass style with a soft glow.",
+      "Restyled the AI header, prompt row, send button, and quick actions.",
+      "Kept the existing modal behavior and positioning logic intact.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
