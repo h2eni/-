@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.5</title>
+      <title>Lumon [ BETA ] v1.7.6</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2192,7 +2192,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.5].</h1>
+          <h1>Designing with edits, not guesses [v1.7.6].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2286,7 +2286,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.5</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.6</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2453,14 +2453,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.5";
+    const APP_VERSION = "1.7.6";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_5";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_5";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_6";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_6";
     const WHATS_NEW_ITEMS = [
-      "Refined the left gutter so block controls sit closer to the text.",
-      "Aligned paragraph and list-item controls with a consistent Notion-like offset.",
-      "Kept gutter placement clamped safely inside the workspace.",
+      "Ensured AI-generated lists count each list item as its own block.",
+      "Marked generated list items with block metadata instead of treating the parent list as one block.",
+      "Kept list previews, block tools, moving, duplicating, and deletion aligned to individual rows.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -3818,7 +3818,8 @@
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
             "Use format edits only when formatting is requested or clearly helpful.",
-            "Lists should ALWAYS be in <ul>...</ul>.",
+            "Lists should ALWAYS be in <ul>...</ul>, but never treat the <ul> or <ol> wrapper as the editable block.",
+            "Each generated list item must be its own independent <li> block. Four generated list items means four blocks, not one list block.",
             "Each individual <li> inside a <ul>...</ul> or <ol>...</ol> counts as one individual block for selection, block tools, moving, duplicating, deletion, previewing, and applying edits.",
             "Keep rationale short and mention occurrence context when useful."
           ].join(" ")
@@ -5294,15 +5295,15 @@
       if (!lines.length) return "";
 
       if (normalizedBlockType === "bullet_list") {
-        return `<ul>${lines.map(line => `<li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+        return `<ul data-block-container="list">${lines.map(line => `<li data-block="list-item">${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
       }
 
       if (normalizedBlockType === "ordered_list") {
-        return `<ol>${lines.map(line => `<li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
+        return `<ol data-block-container="list">${lines.map(line => `<li data-block="list-item">${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
       }
 
       if (normalizedBlockType === "todo_list") {
-        return `<ul data-type="taskList">${lines.map(line => `<li data-type="taskItem" data-checked="false">${renderInline(line.replace(/^[-*]\s+\[[ x]\]\s+/i, "").replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+        return `<ul data-type="taskList" data-block-container="list">${lines.map(line => `<li data-type="taskItem" data-checked="false" data-block="list-item">${renderInline(line.replace(/^[-*]\s+\[[ x]\]\s+/i, "").replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
       }
 
       return lines.map(line => {
@@ -5310,8 +5311,8 @@
         if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
         if (normalizedBlockType === "heading_3" || /^###\s+/.test(line)) return `<h3>${renderInline(line.replace(/^###\s+/, ""))}</h3>`;
         if (normalizedBlockType === "quote" || /^>\s+/.test(line)) return `<blockquote>${renderInline(line.replace(/^>\s+/, ""))}</blockquote>`;
-        if (/^[-*]\s+/.test(line)) return `<ul><li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
-        if (/^\d+[.)]\s+/.test(line)) return `<ol><li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
+        if (/^[-*]\s+/.test(line)) return `<ul data-block-container="list"><li data-block="list-item">${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
+        if (/^\d+[.)]\s+/.test(line)) return `<ol data-block-container="list"><li data-block="list-item">${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
         return `<p>${renderInline(line)}</p>`;
       }).join("");
     }
