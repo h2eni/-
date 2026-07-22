@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.8</title>
+      <title>Lumon [ BETA ] v1.7.9</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2192,7 +2192,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.8].</h1>
+          <h1>Designing with edits, not guesses [v1.7.9].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2286,7 +2286,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.8</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.9</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2724,7 +2724,8 @@
                       "insert_after",
                       "insert_before",
                       "remove",
-                      "format"
+                      "format",
+                      "list"
                     ]
                   },
                   blockType: {
@@ -2761,7 +2762,17 @@
                   },
                   text: {
                     type: "string",
-                    description: "Inserted text for insert edits."
+                    description: "Inserted text for insert edits. For list edits, use items instead; text is only a fallback."
+                  },
+                  listType: {
+                    type: "string",
+                    enum: ["bullet", "ordered", "todo"],
+                    description: "List style for type: list. Defaults to bullet."
+                  },
+                  items: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Structured list items for type: list. Each item becomes one independent list item block. Do not include leading bullets, numbers, or quotes."
                   },
                   format: {
                     type: "string",
@@ -3859,6 +3870,7 @@
             "Preserve meaning unless the instruction asks for a transformation.",
             "Do not output HTML in edit fields.",
             "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, code_block.",
+"For generated lists, use type: list with listType and items, for example { type: \"list\", target: \"current block text\", listType: \"bullet\", items: [\"List 1\", \"List 2\"] }. Each item must be a plain string without a leading bullet or number. Do not send a generated list as one Markdown blob unless items is impossible.",
             "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
             "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
@@ -4043,6 +4055,10 @@
 
       if (edit.type === "format") {
         return `Apply ${edit.format || "formatting"} to “${edit.target}”`;
+      }
+
+      if (edit.type === "list") {
+        return `Create ${edit.listType || "bullet"} list after “${edit.target}”: ${getListEditItems(edit).join(", ")}`;
       }
 
       return "Suggested edit";
@@ -5218,9 +5234,57 @@
       };
     }
 
+    function getListEditItems(edit) {
+      if (Array.isArray(edit?.items) && edit.items.length) {
+        return edit.items
+          .map(item => String(item || "").trim().replace(/^["']|["']$/g, ""))
+          .filter(Boolean);
+      }
+
+      return normalizeMarkdownText(edit?.text || edit?.replacement || "")
+        .split("\n")
+        .map(line => line
+          .replace(/^[-*]\s+\[[ x]\]\s+/i, "")
+          .replace(/^[-*]\s+/, "")
+          .replace(/^\d+[.)]\s+/, "")
+          .replace(/^["']|["']$/g, "")
+          .trim())
+        .filter(Boolean);
+    }
+
+    function getListEditBlockType(edit) {
+      if (edit?.listType === "ordered") return "ordered_list";
+      if (edit?.listType === "todo") return "todo_list";
+      return "bullet_list";
+    }
+
+    function getListEditText(edit) {
+      const blockType = getListEditBlockType(edit);
+      return getListEditItems(edit).map((item, index) => {
+        if (blockType === "ordered_list") return `${index + 1}. ${item}`;
+        if (blockType === "todo_list") return `- [ ] ${item}`;
+        return `- ${item}`;
+      }).join("\n");
+    }
+
+    function normalizeListEdit(edit) {
+      if (edit?.type !== "list") return edit;
+
+      const text = getListEditText(edit);
+      return {
+        ...edit,
+        type: "insert_after",
+        text,
+        insertText: text,
+        blockType: getListEditBlockType(edit),
+        rationale: edit.rationale || "Generated a structured list with each item as its own block."
+      };
+    }
+
     function previewInlineDiff(edit, index) {
       if (!edit || !edit.target) return false;
 
+      edit = normalizeListEdit(edit);
       edit = normalizeEditOccurrence(edit);
       const occurrence = edit.occurrence;
 
@@ -5485,9 +5549,19 @@
         : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`;
 
       if (isAdd && isBlockPreview) {
-        token.querySelectorAll("p,h1,h2,h3,ul,ol,blockquote,pre").forEach(child => {
+        token.querySelectorAll("p,h1,h2,h3,blockquote,pre").forEach(child => {
           child.style.margin = "0";
           child.style.display = "inline";
+          child.style.color = "inherit";
+          child.style.fontSize = "inherit";
+          child.style.lineHeight = "inherit";
+        });
+
+        token.querySelectorAll("ul,ol").forEach(child => {
+          child.style.margin = "0";
+          child.style.paddingLeft = "1.25em";
+          child.style.display = "inline-grid";
+          child.style.gap = "2px";
           child.style.color = "inherit";
           child.style.fontSize = "inherit";
           child.style.lineHeight = "inherit";
@@ -5497,6 +5571,9 @@
           child.style.margin = "0";
           child.style.display = "list-item";
           child.style.color = "inherit";
+          child.style.background = "rgba(35, 131, 226, 0.08)";
+          child.style.borderRadius = "4px";
+          child.style.padding = "1px 3px";
         });
       }
 
@@ -5736,6 +5813,7 @@
 
       let transaction = tiptapEditor.state.tr;
       const ordered = [...edits]
+        .map(normalizeListEdit)
         .filter(edit => edit.docFrom != null)
         .sort((a, b) => b.docFrom - a.docFrom);
 
