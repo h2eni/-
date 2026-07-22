@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumon [ BETA ] </title>
+      <title>Lumon [ BETA ] v1.6.3</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -49,7 +49,9 @@
     html,
     body {
       margin: 0;
+      height: 100%;
       min-height: 100%;
+      overflow-y: scroll;
     }
 
     body {
@@ -57,6 +59,7 @@
       background: #191919;
       color: var(--text);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
     }
 
     button,
@@ -523,6 +526,7 @@
       background: #111;
       color: #e4e4e7;
       overflow-x: auto;
+      overflow-y: auto;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 14px;
       line-height: 1.55;
@@ -535,6 +539,37 @@
       background: transparent;
       color: inherit;
       font-size: inherit;
+    }
+
+    .editor pre .hljs-comment,
+    .editor pre .hljs-quote {
+      color: #71717a;
+    }
+
+    .editor pre .hljs-keyword,
+    .editor pre .hljs-selector-tag,
+    .editor pre .hljs-subst {
+      color: #93c5fd;
+    }
+
+    .editor pre .hljs-string,
+    .editor pre .hljs-title,
+    .editor pre .hljs-section,
+    .editor pre .hljs-attribute {
+      color: #86efac;
+    }
+
+    .editor pre .hljs-number,
+    .editor pre .hljs-literal,
+    .editor pre .hljs-variable,
+    .editor pre .hljs-template-variable {
+      color: #fbbf24;
+    }
+
+    .editor pre .hljs-built_in,
+    .editor pre .hljs-type,
+    .editor pre .hljs-class .hljs-title {
+      color: #c4b5fd;
     }
 
     .slash-menu {
@@ -1885,7 +1920,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.2].</h1>
+          <h1>Designing with edits, not guesses [v1.6.3].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -1979,7 +2014,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.2</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.3</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2146,15 +2181,15 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.6.2";
+    const APP_VERSION = "1.6.3";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_2";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_2";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_3";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_3";
     const WHATS_NEW_ITEMS = [
-      "Added a version-aware What’s New modal.",
-      "Stores the current version in LocalStorage so updates can be shown once per version.",
-      "Added a dedicated LocalStorage key for saved scripts.",
-      "Keeps code-block newlines inside one code block unless three consecutive newlines end the block."
+      "Integrated TipTap CodeBlock Lowlight for syntax-highlighted code blocks.",
+      "Added safe vertical scrolling with overflow-y: scroll while keeping horizontal layout stable.",
+      "Updated version-aware LocalStorage keys for this release.",
+      "Preserved code-block diff previews and existing AI multi-edit behavior."
     ];
 
     function getMistralApiKey() {
