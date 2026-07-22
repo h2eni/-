@@ -1527,6 +1527,77 @@
       transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
     }
 
+    .whats-new-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      display: none;
+      place-items: center;
+      padding: 22px;
+      background: rgba(0, 0, 0, 0.54);
+      backdrop-filter: blur(10px);
+    }
+
+    .whats-new-backdrop.show {
+      display: grid;
+    }
+
+    .whats-new-modal {
+      width: min(480px, calc(100vw - 32px));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 22px;
+      background: rgba(32, 32, 32, 0.98);
+      color: #f4f4f5;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .whats-new-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 18px 10px;
+    }
+
+    .whats-new-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+    }
+
+    .whats-new-close {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #d4d4d8;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .whats-new-close:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+    }
+
+    .whats-new-body {
+      padding: 0 18px 18px;
+      color: #d4d4d8;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .whats-new-body ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    .whats-new-body li {
+      margin: 6px 0;
+    }
+
     .toast {
       position: fixed;
       right: 20px;
@@ -1905,6 +1976,16 @@
     </section>
   </main>
 
+  <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
+    <section class="whats-new-modal">
+      <header class="whats-new-header">
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.2</h2>
+        <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
+      </header>
+      <div id="whatsNewBody" class="whats-new-body"></div>
+    </section>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <script type="module">
@@ -2065,6 +2146,16 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
+    const APP_VERSION = "1.6.2";
+    const APP_VERSION_LABEL = `v${APP_VERSION}`;
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_2";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_2";
+    const WHATS_NEW_ITEMS = [
+      "Added a version-aware What’s New modal.",
+      "Stores the current version in LocalStorage so updates can be shown once per version.",
+      "Added a dedicated LocalStorage key for saved scripts.",
+      "Keeps code-block newlines inside one code block unless three consecutive newlines end the block."
+    ];
 
     function getMistralApiKey() {
       const savedKey = localStorage.getItem("mistral_api_key") || "";
@@ -2093,6 +2184,10 @@
     const blockTools = document.querySelector(".block-tools");
     const blockTunePopup = document.getElementById("blockTunePopup");
     const turnIntoPopup = document.getElementById("turnIntoPopup");
+    const whatsNewBackdrop = document.getElementById("whatsNewBackdrop");
+    const whatsNewTitle = document.getElementById("whatsNewTitle");
+    const whatsNewBody = document.getElementById("whatsNewBody");
+    const whatsNewClose = document.getElementById("whatsNewClose");
     const addBlockBtn = document.getElementById("addBlockBtn");
     const dragBlockBtn = document.getElementById("dragBlockBtn");
     let activeBlock = null;
@@ -2100,6 +2195,61 @@
 
     const initialEditorContent = editor.innerHTML;
     editor.innerHTML = "";
+
+    function getSavedScripts() {
+      try {
+        return JSON.parse(localStorage.getItem(APP_SCRIPT_STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveScript(name, code) {
+      const scripts = getSavedScripts();
+      const nextScript = {
+        id: crypto?.randomUUID?.() || String(Date.now()),
+        name: name || `Script ${scripts.length + 1}`,
+        code: String(code || ""),
+        version: APP_VERSION_LABEL,
+        updatedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(APP_SCRIPT_STORAGE_KEY, JSON.stringify([nextScript, ...scripts]));
+      return nextScript;
+    }
+
+    function renderWhatsNewModal() {
+      if (!whatsNewTitle || !whatsNewBody) return;
+      whatsNewTitle.textContent = `What’s New in ${APP_VERSION_LABEL}`;
+      whatsNewBody.innerHTML = `
+        <p>Updates in this version:</p>
+        <ul>
+          ${WHATS_NEW_ITEMS.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+        </ul>
+      `;
+    }
+
+    function showWhatsNewModal({ force = false } = {}) {
+      if (!whatsNewBackdrop) return;
+      const seenVersion = localStorage.getItem(APP_VERSION_STORAGE_KEY);
+      localStorage.setItem("lumon_current_version", APP_VERSION_LABEL);
+      localStorage.setItem("lumon_saved_scripts_key", APP_SCRIPT_STORAGE_KEY);
+
+      if (!force && seenVersion === APP_VERSION_LABEL) return;
+
+      renderWhatsNewModal();
+      whatsNewBackdrop.classList.add("show");
+    }
+
+    function closeWhatsNewModal() {
+      localStorage.setItem(APP_VERSION_STORAGE_KEY, APP_VERSION_LABEL);
+      whatsNewBackdrop?.classList.remove("show");
+    }
+
+    whatsNewClose?.addEventListener("click", closeWhatsNewModal);
+    whatsNewBackdrop?.addEventListener("click", event => {
+      if (event.target === whatsNewBackdrop) closeWhatsNewModal();
+    });
 
     const tiptapEditor = new Editor({
       element: editor,
@@ -2138,6 +2288,13 @@
     });
 
     window.tiptapEditor = tiptapEditor;
+    window.lumonScripts = {
+      key: APP_SCRIPT_STORAGE_KEY,
+      getSavedScripts,
+      saveScript
+    };
+
+    showWhatsNewModal();
 
     let pendingEdits = [];
     let activeDiffs = [];
@@ -2255,7 +2412,7 @@
                       "quote",
                       "code_block"
                     ],
-                    description: "Block format to create or apply. Use this for inserted blocks and block-level formatting."
+                    description: "Block format to create or apply. Use this for inserted blocks and block-level formatting. For code_block, normal newlines stay inside the same code block; use three consecutive newlines only when the code should end and a paragraph should begin below."
                   },
                   marks: {
                     type: "array",
@@ -3212,6 +3369,7 @@
             "Do not output HTML in edit fields.",
             "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, code_block.",
             "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
+            "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
@@ -4618,8 +4776,23 @@
 
     function linesToBlockHtml(value, { blockType = "paragraph", marks = [] } = {}) {
       const source = normalizeMarkdownText(value);
-      const lines = source.split("\n").filter(line => line.trim());
       const normalizedBlockType = normalizeBlockType(blockType);
+
+      if (normalizedBlockType === "code_block") {
+        const [code = "", ...paragraphParts] = source.split(/\n{3,}/);
+        const codeHtml = code.trimEnd()
+          ? `<pre><code>${escapeHtml(code.trimEnd())}</code></pre>`
+          : "";
+        const paragraphHtml = paragraphParts
+          .join("\n\n")
+          .split(/\n+/)
+          .filter(line => line.trim())
+          .map(line => `<p>${applyMarks(applyInlineMarkdown(line), marks)}</p>`)
+          .join("");
+        return `${codeHtml}${paragraphHtml}`;
+      }
+
+      const lines = source.split("\n").filter(line => line.trim());
       const renderInline = line => applyMarks(applyInlineMarkdown(line), marks);
 
       if (!lines.length) return "";
@@ -4641,7 +4814,6 @@
         if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
         if (normalizedBlockType === "heading_3" || /^###\s+/.test(line)) return `<h3>${renderInline(line.replace(/^###\s+/, ""))}</h3>`;
         if (normalizedBlockType === "quote" || /^>\s+/.test(line)) return `<blockquote>${renderInline(line.replace(/^>\s+/, ""))}</blockquote>`;
-        if (normalizedBlockType === "code_block") return `<pre><code>${escapeHtml(line)}</code></pre>`;
         if (/^[-*]\s+/.test(line)) return `<ul><li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
         if (/^\d+[.)]\s+/.test(line)) return `<ol><li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
         return `<p>${renderInline(line)}</p>`;
