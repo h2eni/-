@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.6</title>
+      <title>Lumon [ BETA ] v1.7.7</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2192,7 +2192,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.6].</h1>
+          <h1>Designing with edits, not guesses [v1.7.7].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2286,7 +2286,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.6</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.7</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2453,14 +2453,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.6";
+    const APP_VERSION = "1.7.7";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_6";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_6";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_7";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_7";
     const WHATS_NEW_ITEMS = [
-      "Ensured AI-generated lists count each list item as its own block.",
-      "Marked generated list items with block metadata instead of treating the parent list as one block.",
-      "Kept list previews, block tools, moving, duplicating, and deletion aligned to individual rows.",
+      "Refined generated-list diff previews so list rows read more clearly.",
+      "Cleaned up slash-command text before AI insert previews are generated.",
+      "Improved list insertion acceptance so generated lists land as block content.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -3820,6 +3820,7 @@
             "Use format edits only when formatting is requested or clearly helpful.",
             "Lists should ALWAYS be in <ul>...</ul>, but never treat the <ul> or <ol> wrapper as the editable block.",
             "Each generated list item must be its own independent <li> block. Four generated list items means four blocks, not one list block.",
+            "When inserting a generated list after slash-command text such as /ai, treat the slash command as UI-only trigger text and do not preserve it in the preview or accepted document.",
             "Each individual <li> inside a <ul>...</ul> or <ol>...</ol> counts as one individual block for selection, block tools, moving, duplicating, deletion, previewing, and applying edits.",
             "Keep rationale short and mention occurrence context when useful."
           ].join(" ")
@@ -4347,6 +4348,10 @@
     }
 
     sendBtn.addEventListener("click", () => {
+      if (slashMenuOpen) {
+        removeSlashQuery();
+        hideSlashMenu();
+      }
       const prompt = aiInput.value;
       aiInput.value = "";
       runAiPrompt(prompt);
@@ -4355,6 +4360,10 @@
     aiInput.addEventListener("keydown", event => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
+        if (slashMenuOpen) {
+          removeSlashQuery();
+          hideSlashMenu();
+        }
         const prompt = aiInput.value;
         aiInput.value = "";
         runAiPrompt(prompt);
@@ -4376,6 +4385,10 @@
         return;
       }
 
+      if (slashMenuOpen) {
+        removeSlashQuery();
+        hideSlashMenu();
+      }
       runAiPrompt(button.dataset.prompt || button.textContent);
     });
 
@@ -4594,7 +4607,11 @@
 
     document.querySelectorAll(".slash-item").forEach(button => {
       button.addEventListener("click", () => {
-        runAiPrompt(button.dataset.prompt || button.textContent);
+        if (slashMenuOpen) {
+        removeSlashQuery();
+        hideSlashMenu();
+      }
+      runAiPrompt(button.dataset.prompt || button.textContent);
       });
     });
 
@@ -5342,6 +5359,49 @@
       return transaction.replaceRange(from, to, slice);
     }
 
+    function isListBlockType(blockType) {
+      const normalized = normalizeBlockType(blockType);
+      return normalized === "bullet_list" || normalized === "ordered_list" || normalized === "todo_list";
+    }
+
+    function isSlashCommandText(value) {
+      return /^\/[\w-]*$/.test(String(value || "").trim());
+    }
+
+    function getBlockRangeAtDocPos(docPos) {
+      try {
+        const $pos = tiptapEditor.state.doc.resolve(docPos);
+        for (let depth = $pos.depth; depth > 0; depth--) {
+          const node = $pos.node(depth);
+          if (node.isBlock) {
+            const before = $pos.before(depth);
+            return {
+              from: before,
+              to: before + node.nodeSize,
+              node
+            };
+          }
+        }
+      } catch {
+        return null;
+      }
+
+      return null;
+    }
+
+    function getInsertRangeForEdit(edit, from, to) {
+      if (!isListBlockType(edit.blockType)) return { from, to };
+      if (!isSlashCommandText(edit.target)) return { from, to };
+
+      const blockRange = getBlockRangeAtDocPos(from);
+      if (!blockRange) return { from, to };
+
+      return {
+        from: blockRange.from,
+        to: blockRange.to
+      };
+    }
+
     function createDiffToken(action, text, diffIndex, { codeSafe = false, html = "" } = {}) {
       const isAdd = action === "add";
       const previewText = normalizeMarkdownText(text);
@@ -5496,14 +5556,17 @@
       const addedText = type === "replace" ? replacement : insertText;
       const normalizedBlockType = normalizeBlockType(blockType);
       const isListItemMatch = Boolean(match.node?.parentElement?.closest?.("li"));
+      const isGeneratedListInsert = isListBlockType(blockType) && (type === "insert_before" || type === "insert_after" || isSlashCommandText(target));
       const hasExplicitNewLine = normalizeMarkdownText(addedText).includes("\n");
       const isInlineListRewrite =
         isListItemMatch &&
         !hasExplicitNewLine &&
+        !isGeneratedListInsert &&
         (type === "replace" || type === "insert_before" || type === "insert_after");
       const shouldRenderBlockPreview =
         !isInlineListRewrite &&
         (
+          isGeneratedListInsert ||
           Boolean(blockType && normalizedBlockType !== "paragraph") ||
           hasExplicitNewLine
         );
@@ -5541,14 +5604,15 @@
 
       activeDiffs.push({
         index,
-        type,
+        type: isGeneratedListInsert && isSlashCommandText(target) ? "replace" : type,
         target,
-        replacement,
+        replacement: isGeneratedListInsert && isSlashCommandText(target) ? addedText : replacement,
         insertText,
         blockType,
         marks,
         docFrom: match.docFrom,
         docTo: match.docFrom + target.length,
+        replaceTargetBlock: isGeneratedListInsert && isSlashCommandText(target),
         previewOnly: true
       });
 
@@ -5620,8 +5684,11 @@
         .sort((a, b) => b.docFrom - a.docFrom);
 
       ordered.forEach(edit => {
-        const from = edit.docFrom;
-        const to = from + edit.target.length;
+        const initialFrom = edit.docFrom;
+        const initialTo = initialFrom + edit.target.length;
+        const range = edit.replaceTargetBlock ? getInsertRangeForEdit(edit, initialFrom, initialTo) : { from: initialFrom, to: initialTo };
+        const from = range.from;
+        const to = range.to;
         const isCodeEdit = isCodeBlockDocPos(from);
 
         const html = linesToBlockHtml(getEditText(edit), {
