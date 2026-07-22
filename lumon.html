@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.7.2</title>
+      <title>Lumon [ BETA ] v1.7.3</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -1825,7 +1825,8 @@
     }
 
     .diff-preview-active,
-    .editor .ProseMirror > :has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview) {
+    .editor .ProseMirror > :is(h1, h2, h3, p, blockquote, pre):has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview),
+    .editor .ProseMirror li:has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview) {
       background: rgba(35, 131, 226, 0.14);
       border-radius: 8px;
       outline: 1px solid rgba(35, 131, 226, 0.18);
@@ -2191,7 +2192,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.2].</h1>
+          <h1>Designing with edits, not guesses [v1.7.3].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2285,7 +2286,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.2</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.3</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2452,14 +2453,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.2";
+    const APP_VERSION = "1.7.3";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_2";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_2";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_3";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_3";
     const WHATS_NEW_ITEMS = [
-      "Counted every list item as its own block.",
-      "Kept list-item move, duplicate, and delete actions inside the parent list.",
-      "Improved selection behavior for individual list rows.",
+      "Completed list-item block logic for inline diff previews.",
+      "Scoped list diff highlights to each individual list item.",
+      "Kept multi-edit replacements from visually grouping the whole list.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -5509,7 +5510,8 @@
             class: removeClass,
             "data-diff-action": "preview",
             "data-diff-index": String(index),
-            "data-diff-preview": "true"
+            "data-diff-preview": "true",
+            "data-diff-block": match.node?.parentElement?.closest?.("li") ? "list-item" : "block"
           })
         );
       }
