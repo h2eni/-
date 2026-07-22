@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.6.4</title>
+      <title>Lumon [ BETA ] v1.6.5</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -1928,7 +1928,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.6.4].</h1>
+          <h1>Designing with edits, not guesses [v1.6.5].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2022,7 +2022,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.4</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.6.5</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2189,14 +2189,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.6.4";
+    const APP_VERSION = "1.6.5";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_4";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_4";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_6_5";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_6_5";
     const WHATS_NEW_ITEMS = [
-      "Kept long code blocks horizontally scrollable when content overflows.",
-      "Prevented code blocks from expanding the page width or creating layout bugs.",
-      "Preserved CodeBlock Lowlight syntax highlighting inside scrollable code blocks.",
+      "Fixed AI edits inside code blocks so single newlines stay inside the code block.",
+      "Applied code-block edit acceptance as plain text instead of paragraph HTML.",
+      "Preserved CodeBlock Lowlight syntax highlighting and horizontal scrolling.",
       "Updated version-aware LocalStorage keys for this release."
     ];
 
@@ -5158,28 +5158,38 @@
       ordered.forEach(edit => {
         const from = edit.docFrom;
         const to = from + edit.target.length;
+        const isCodeEdit = isCodeBlockDocPos(from);
 
         const html = linesToBlockHtml(getEditText(edit), {
-          blockType: edit.blockType,
+          blockType: isCodeEdit ? "code_block" : edit.blockType,
           marks: edit.marks
         });
+        const plainText = normalizeMarkdownText(getEditText(edit));
 
         if (edit.type === "replace") {
-          transaction = html
+          transaction = isCodeEdit
+            ? transaction.insertText(plainText, from, to)
+            : html
             ? insertHtmlAt(transaction, html, from, to)
             : transaction.delete(from, to);
         } else if (edit.type === "remove") {
           transaction = transaction.delete(from, to);
         } else if (edit.type === "insert_before") {
-          transaction = html
+          transaction = isCodeEdit
+            ? transaction.insertText(plainText, from)
+            : html
             ? insertHtmlAt(transaction, html, from)
             : transaction.insertText(markdownToPlainText(edit.insertText || ""), from);
         } else if (edit.type === "insert_after") {
-          transaction = html
+          transaction = isCodeEdit
+            ? transaction.insertText(plainText, to)
+            : html
             ? insertHtmlAt(transaction, html, to)
             : transaction.insertText(markdownToPlainText(edit.insertText || ""), to);
         } else if (edit.type === "format") {
-          transaction = html
+          transaction = isCodeEdit
+            ? transaction.insertText(plainText || edit.target || "", from, to)
+            : html
             ? insertHtmlAt(transaction, html, from, to)
             : transaction.insertText(markdownToPlainText(edit.target || ""), from, to);
         }
