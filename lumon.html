@@ -1648,6 +1648,19 @@
       will-change: opacity, transform;
     }
 
+    .editor blockquote span.diff-added,
+    .editor .ProseMirror blockquote span.diff-added,
+    .editor pre span.diff-added[data-diff-block-preview="true"],
+    .editor .notion-code-block span.diff-added[data-diff-block-preview="true"],
+    .editor .ProseMirror pre span.diff-added[data-diff-block-preview="true"],
+    .editor .ProseMirror .notion-code-block span.diff-added[data-diff-block-preview="true"] {
+      color: inherit !important;
+      background: transparent !important;
+      border-radius: inherit;
+      padding: 0;
+      box-shadow: none !important;
+    }
+
     .slash-menu-placeholder-marker-a {
       display: none;
     }
@@ -1832,7 +1845,12 @@
       transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
     }
 
-    .editor .ProseMirror [data-diff-highlight-block="true"] {
+    .editor[data-ai-scope-mode="selection"] .ProseMirror > :is(h1, h2, h3, p, blockquote, pre):has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview),
+    .editor[data-ai-scope-mode="selection"] .ProseMirror li:has(.diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview),
+    .editor .ProseMirror .diff-added[data-diff-block-preview="true"] > :is(p, h1, h2, h3, blockquote, pre),
+    .editor .ProseMirror .diff-added[data-diff-block-preview="true"] li,
+    .editor .ProseMirror .code-diff-preview,
+    .editor .ProseMirror .code-diff-anchor {
       background: rgba(35, 131, 226, 0.14);
       border-radius: 8px;
       outline: 1px solid rgba(35, 131, 226, 0.18);
@@ -3424,6 +3442,7 @@
       aiDock.classList.add("show");
       aiDock.dataset.scopeMode = hasSelection || savedSelectionRange ? "selection" : "block";
       aiDock.dataset.scopeBlock = !hasSelection && caretBlock?.matches?.("li") ? "list-item" : "block";
+      editor.dataset.aiScopeMode = aiDock.dataset.scopeMode;
 
       positionAIModal();
 
@@ -5528,7 +5547,7 @@
       };
     }
 
-    function createDiffToken(action, text, diffIndex, { codeSafe = false, html = "" } = {}) {
+    function createDiffToken(action, text, diffIndex, { codeSafe = false, html = "", blockPreview = false } = {}) {
       const isAdd = action === "add";
       const previewText = normalizeMarkdownText(text);
 
@@ -5548,7 +5567,9 @@
       if (isAdd) token.innerHTML = html || markdownToHtml(previewText);
       else token.textContent = previewText;
 
-      const isBlockPreview = token.dataset.diffBlockPreview === "true";
+      const isBlockPreview = blockPreview || token.dataset.diffBlockPreview === "true";
+      token.dataset.diffBlockPreview = isBlockPreview ? "true" : "false";
+      if (isBlockPreview) token.setAttribute("data-diff-block-preview", "true");
 
       token.style.cssText = isAdd
         ? `display:${isBlockPreview ? "inline-block" : "inline"};vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "pre-wrap"}!important;line-height:inherit!important;margin:0!important;`
@@ -5674,10 +5695,39 @@
       return null;
     }
 
+    function getPreviewHighlightBlocks(node) {
+      const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      if (!element) return [];
+
+      const innerBlocks = Array.from(
+        element.querySelectorAll?.("li, h1, h2, h3, p, blockquote, pre, .notion-code-block") || []
+      ).filter(block => editor.contains(block));
+
+      if (innerBlocks.length) return innerBlocks;
+
+      const block = getPreviewHighlightBlock(element);
+      return block ? [block] : [];
+    }
+
     function clearPreviewHighlightBlocks() {
       getProseMirrorRoot()?.querySelectorAll("[data-diff-highlight-block='true']").forEach(block => {
         block.removeAttribute("data-diff-highlight-block");
       });
+    }
+
+    function syncPreviewHighlightBlocks() {
+      const root = getProseMirrorRoot();
+      if (!root) return;
+
+      clearPreviewHighlightBlocks();
+
+      root
+        .querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
+        .forEach(node => {
+          getPreviewHighlightBlocks(node).forEach(block => {
+            block.setAttribute("data-diff-highlight-block", "true");
+          });
+        });
     }
 
     function getCodePreviewHtml({ type, matched, replacement = "", insertText = "" }) {
@@ -5712,16 +5762,19 @@
       const addedText = type === "replace" ? replacement : insertText;
       const normalizedBlockType = normalizeBlockType(blockType);
       const isListItemMatch = Boolean(match.node?.parentElement?.closest?.("li"));
+      const isSlashCommandInsert = isSlashCommandText(target) && (type === "insert_before" || type === "insert_after");
       const isGeneratedListInsert = isListBlockType(blockType) && (type === "insert_before" || type === "insert_after" || isSlashCommandText(target));
       const hasExplicitNewLine = normalizeMarkdownText(addedText).includes("\n");
       const isInlineListRewrite =
         isListItemMatch &&
         !hasExplicitNewLine &&
         !isGeneratedListInsert &&
+        !isSlashCommandInsert &&
         (type === "replace" || type === "insert_before" || type === "insert_after");
       const shouldRenderBlockPreview =
         !isInlineListRewrite &&
         (
+          isSlashCommandInsert ||
           isGeneratedListInsert ||
           Boolean(blockType && normalizedBlockType !== "paragraph") ||
           hasExplicitNewLine
@@ -5729,7 +5782,7 @@
       const addedHtml = shouldRenderBlockPreview
         ? linesToBlockHtml(addedText, { blockType, marks })
         : applyMarks(applyInlineMarkdown(markdownToPlainText(addedText)), marks);
-      const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml };
+      const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml, blockPreview: shouldRenderBlockPreview };
 
       if (type === "replace" || type === "remove") {
         decorations.push(
@@ -5751,6 +5804,7 @@
             token.className = addClass;
             token.dataset.diffAction = "preview";
             token.dataset.diffBlockPreview = shouldRenderBlockPreview ? "true" : "false";
+
             return token;
           }, { side: type === "insert_before" ? -1 : 1 })
         );
@@ -5758,20 +5812,17 @@
 
       if (codeBlock) codeBlock.classList.add("code-diff-anchor");
 
-      const highlightBlock = getPreviewHighlightBlock(match.node);
-      highlightBlock?.setAttribute("data-diff-highlight-block", "true");
-
       activeDiffs.push({
         index,
-        type: isGeneratedListInsert && isSlashCommandText(target) ? "replace" : type,
+        type: isSlashCommandInsert ? "replace" : type,
         target,
-        replacement: isGeneratedListInsert && isSlashCommandText(target) ? addedText : replacement,
+        replacement: isSlashCommandInsert ? addedText : replacement,
         insertText,
         blockType,
         marks,
         docFrom: match.docFrom,
         docTo: match.docFrom + target.length,
-        replaceTargetBlock: isGeneratedListInsert && isSlashCommandText(target),
+        replaceTargetBlock: isSlashCommandInsert,
         previewOnly: true
       });
 
@@ -5929,6 +5980,7 @@
       }
 
       hideAIModal({ refocusEditor: false, resetFollowUp: false });
+      editor.removeAttribute("data-ai-scope-mode");
 
       if (refocusEditor) {
         requestAnimationFrame(() => {
