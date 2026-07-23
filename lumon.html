@@ -1648,8 +1648,8 @@
       will-change: opacity, transform;
     }
 
-    .editor blockquote span.diff-added,
-    .editor .ProseMirror blockquote span.diff-added,
+    .editor blockquote span.diff-added[data-diff-block-preview="true"],
+    .editor .ProseMirror blockquote span.diff-added[data-diff-block-preview="true"],
     .editor pre span.diff-added[data-diff-block-preview="true"],
     .editor .notion-code-block span.diff-added[data-diff-block-preview="true"],
     .editor .ProseMirror pre span.diff-added[data-diff-block-preview="true"],
@@ -1856,6 +1856,21 @@
       outline: 1px solid rgba(35, 131, 226, 0.18);
       box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
       transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .editor .ProseMirror .diff-added[data-diff-block-preview="true"] {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+
+    .editor .ProseMirror blockquote:has(.diff-added[data-diff-block-preview="true"]),
+    .editor .ProseMirror pre:has(.diff-added[data-diff-block-preview="true"]),
+    .editor .ProseMirror .notion-code-block:has(.diff-added[data-diff-block-preview="true"]) {
+      background: rgba(35, 131, 226, 0.14) !important;
+      outline: 1px solid rgba(35, 131, 226, 0.18);
+      box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
     }
 
     .whats-new-backdrop {
@@ -2216,7 +2231,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.7.9].</h1>
+          <h1>Designing with edits, not guesses [v1.8.0].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2476,8 +2491,8 @@
 
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
-    const MISTRAL_MODEL = "mistral-large-latest";
-    const APP_VERSION = "1.7.8";
+    const MISTRAL_MODEL = "labs-leanstrall-1-5-1";
+    const APP_VERSION = "1.8.0";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
     const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_8";
     const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_8";
@@ -2749,7 +2764,8 @@
                       "insert_before",
                       "remove",
                       "format",
-                      "list"
+                      "list",
+                      "content"
                     ]
                   },
                   blockType: {
@@ -2763,7 +2779,9 @@
                       "ordered_list",
                       "todo_list",
                       "quote",
-                      "code_block"
+                      "code_block",
+                      "blockquote",
+                      "divider"
                     ],
                     description: "Block format to create or apply. Use this for inserted blocks and block-level formatting. For code_block, normal newlines stay inside the same code block; use three consecutive newlines only when the code should end and a paragraph should begin below."
                   },
@@ -2797,6 +2815,48 @@
                     type: "array",
                     items: { type: "string" },
                     description: "Structured list items for type: list. Each item becomes one independent list item block. Do not include leading bullets, numbers, or quotes."
+                  },
+                  contentBlocks: {
+                    type: "array",
+                    description: "Structured formatted content for type: content. Use this for mixed content, nested lists, code blocks, headings, blockquotes, and multi-block insertions.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: {
+                          type: "string",
+                          enum: ["paragraph", "heading_1", "heading_2", "heading_3", "bullet_list", "ordered_list", "todo_list", "blockquote", "quote", "code_block", "divider"]
+                        },
+                        text: {
+                          type: "string",
+                          description: "Plain text for paragraphs, headings, quotes, and list items. For code blocks, this is the code."
+                        },
+                        language: {
+                          type: "string",
+                          description: "Optional code block language, such as javascript, typescript, html, css, json, lua, python, bash, or plaintext."
+                        },
+                        marks: {
+                          type: "array",
+                          items: {
+                            type: "string",
+                            enum: ["bold", "italic", "underline", "code"]
+                          }
+                        },
+                        items: {
+                          type: "array",
+                          description: "Nested list items. Each item can be a string or an object with text, checked, and children.",
+                          items: {}
+                        },
+                        checked: {
+                          type: "boolean",
+                          description: "For todo list items."
+                        },
+                        children: {
+                          type: "array",
+                          description: "Nested child blocks or nested list items.",
+                          items: {}
+                        }
+                      }
+                    }
                   },
                   format: {
                     type: "string",
@@ -3894,8 +3954,9 @@
             "Never set the occurrence number to 0 when making changes, such as specifying occurrences.",
             "Preserve meaning unless the instruction asks for a transformation.",
             "Do not output HTML in edit fields.",
-            "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, code_block.",
-"For generated lists, use type: list with listType and items, for example { type: \"list\", target: \"current block text\", listType: \"bullet\", items: [\"List 1\", \"List 2\"] }. Each item must be a plain string without a leading bullet or number. Do not send a generated list as one Markdown blob unless items is impossible.",
+            "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, blockquote, code_block, divider.",
+"For generated lists, use type: list with listType and items, for example { type: \"list\", target: \"current block text\", listType: \"bullet\", items: [\"List 1\", { \"text\": \"Nested parent\", \"children\": [\"Nested child\"] }] }. Each item must be a plain string or nested list item object without leading bullets or numbers.",
+"For mixed formatted insertions, use type: content with contentBlocks. contentBlocks can include paragraphs, headings, blockquotes, code blocks with language, dividers, and nested bullet/ordered/todo lists. Prefer contentBlocks over fragile Markdown blobs when generating multiple formatted block types.",
             "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
             "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
@@ -3905,7 +3966,8 @@
             "Lists should ALWAYS be in <ul>...</ul>, but never treat the <ul> or <ol> wrapper as the editable block.",
             "Each generated list item must be its own independent <li> block. Four generated list items means four blocks, not one list block.",
             "When no text is selected and /ai opens the modal, use the caret block as the active scope. A paragraph is one block, and each <li> is one separate block even when the list has multiple items.",
-            "When inserting a generated list after slash-command text such as /ai, treat the slash command as UI-only trigger text and do not preserve it in the preview or accepted document.",
+"Slash commands such as /ai, /h1, /h2, /h3, /bullet, and /number are UI-only trigger text and are removed before the user request is sent to AI. Do not make the edit plan about removing slash-command text; focus on fulfilling the user's actual request.",
+"When inserting generated content after slash-command mode, do not preserve the slash command in the preview or accepted document.",
             "Each individual <li> inside a <ul>...</ul> or <ol>...</ol> counts as one individual block for selection, block tools, moving, duplicating, deletion, previewing, and applying edits.",
             "Never count a <ul> or <ol> wrapper as a single block in no-selection mode; use only its individual <li> children as block units.",
             "Keep rationale short and mention occurrence context when useful."
@@ -4699,6 +4761,8 @@
         hideSlashMenu();
         return;
       }
+removeSlashQuery();
+hideSlashMenu();
       command.run();
     }
 
@@ -5262,8 +5326,8 @@
     function getListEditItems(edit) {
       if (Array.isArray(edit?.items) && edit.items.length) {
         return edit.items
-          .map(item => String(item || "").trim().replace(/^["']|["']$/g, ""))
-          .filter(Boolean);
+          .map(normalizeListItem)
+          .filter(item => item.text || item.children.length);
       }
 
       return normalizeMarkdownText(edit?.text || edit?.replacement || "")
@@ -5274,7 +5338,24 @@
           .replace(/^\d+[.)]\s+/, "")
           .replace(/^["']|["']$/g, "")
           .trim())
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(text => ({ text, children: [], checked: false }));
+    }
+
+    function normalizeListItem(item) {
+      if (typeof item === "string") {
+        return {
+          text: item.trim().replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "").replace(/^["']|["']$/g, ""),
+          children: [],
+          checked: false
+        };
+      }
+
+      return {
+        text: String(item?.text || item?.label || "").trim().replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "").replace(/^["']|["']$/g, ""),
+        children: Array.isArray(item?.children) ? item.children.map(normalizeListItem).filter(child => child.text || child.children.length) : [],
+        checked: Boolean(item?.checked)
+      };
     }
 
     function getListEditBlockType(edit) {
@@ -5285,11 +5366,15 @@
 
     function getListEditText(edit) {
       const blockType = getListEditBlockType(edit);
-      return getListEditItems(edit).map((item, index) => {
-        if (blockType === "ordered_list") return `${index + 1}. ${item}`;
-        if (blockType === "todo_list") return `- [ ] ${item}`;
-        return `- ${item}`;
-      }).join("\n");
+      const stringify = (item, index, depth = 0) => {
+        const indent = "  ".repeat(depth);
+        const text = item.text || "";
+        const marker = blockType === "ordered_list" ? `${index + 1}. ` : blockType === "todo_list" ? `- [${item.checked ? "x" : " "}] ` : "- ";
+        const current = `${indent}${marker}${text}`;
+        const children = item.children.map((child, childIndex) => stringify(child, childIndex, depth + 1));
+        return [current, ...children].join("\n");
+      };
+      return getListEditItems(edit).map((item, index) => stringify(item, index)).join("\n");
     }
 
     function normalizeListEdit(edit) {
@@ -5306,10 +5391,23 @@
       };
     }
 
+    function normalizeContentEdit(edit) {
+      if (edit?.type !== "content") return edit;
+      const text = contentBlocksToMarkdown(edit.contentBlocks || [], edit.text || edit.replacement || "");
+      return {
+        ...edit,
+        type: edit.insertBefore ? "insert_before" : "insert_after",
+        text,
+        insertText: text,
+        blockType: "content",
+        rationale: edit.rationale || "Generated structured formatted content."
+      };
+    }
+
     function previewInlineDiff(edit, index) {
       if (!edit || !edit.target) return false;
 
-      edit = normalizeListEdit(edit);
+      edit = normalizeContentEdit(normalizeListEdit(edit));
       edit = normalizeEditOccurrence(edit);
       const occurrence = edit.occurrence;
 
@@ -5437,6 +5535,10 @@
       const source = normalizeMarkdownText(value);
       const normalizedBlockType = normalizeBlockType(blockType);
 
+      if (normalizedBlockType === "content") {
+        return contentMarkdownToHtml(source, marks);
+      }
+
       if (normalizedBlockType === "code_block") {
         const [code = "", ...paragraphParts] = source.split(/\n{3,}/);
         const codeHtml = code.trimEnd()
@@ -5457,15 +5559,15 @@
       if (!lines.length) return "";
 
       if (normalizedBlockType === "bullet_list") {
-        return `<ul data-block-container="list">${lines.map(line => `<li data-block="list-item">${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+        return `<ul>${lines.map(line => `<li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
       }
 
       if (normalizedBlockType === "ordered_list") {
-        return `<ol data-block-container="list">${lines.map(line => `<li data-block="list-item">${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
+        return `<ol>${lines.map(line => `<li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
       }
 
       if (normalizedBlockType === "todo_list") {
-        return `<ul data-type="taskList" data-block-container="list">${lines.map(line => `<li data-type="taskItem" data-checked="false" data-block="list-item">${renderInline(line.replace(/^[-*]\s+\[[ x]\]\s+/i, "").replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+        return `<ul data-type="taskList">${lines.map(line => `<li data-type="taskItem" data-checked="false">${renderInline(line.replace(/^[-*]\s+\[[ x]\]\s+/i, "").replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
       }
 
       return lines.map(line => {
@@ -5473,10 +5575,101 @@
         if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
         if (normalizedBlockType === "heading_3" || /^###\s+/.test(line)) return `<h3>${renderInline(line.replace(/^###\s+/, ""))}</h3>`;
         if (normalizedBlockType === "quote" || /^>\s+/.test(line)) return `<blockquote>${renderInline(line.replace(/^>\s+/, ""))}</blockquote>`;
-        if (/^[-*]\s+/.test(line)) return `<ul data-block-container="list"><li data-block="list-item">${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
-        if (/^\d+[.)]\s+/.test(line)) return `<ol data-block-container="list"><li data-block="list-item">${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
+        if (/^[-*]\s+/.test(line)) return `<ul><li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
+        if (/^\d+[.)]\s+/.test(line)) return `<ol><li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
         return `<p>${renderInline(line)}</p>`;
       }).join("");
+    }
+
+    function contentBlocksToMarkdown(blocks = [], fallback = "") {
+      if (!Array.isArray(blocks) || !blocks.length) return normalizeMarkdownText(fallback);
+
+      return blocks.map(block => {
+        const type = normalizeBlockType(block?.type || "paragraph");
+        const text = normalizeMarkdownText(block?.text || "");
+        if (type === "heading_1") return `# ${text}`;
+        if (type === "heading_2") return `## ${text}`;
+        if (type === "heading_3") return `### ${text}`;
+        if (type === "quote" || type === "blockquote") return text.split("\n").map(line => `> ${line}`).join("\n");
+        if (type === "code_block") return ["```" + (block?.language || ""), text, "```"].join("\n");
+        if (type === "divider") return "---";
+        if (type === "bullet_list" || type === "ordered_list" || type === "todo_list") {
+          return renderStructuredListMarkdown(block.items || block.children || [], type);
+        }
+        return text;
+      }).filter(Boolean).join("\n\n");
+    }
+
+    function renderStructuredListMarkdown(items = [], blockType = "bullet_list", depth = 0) {
+      return (items || []).map((item, index) => {
+        const normalized = normalizeListItem(item);
+        const indent = "  ".repeat(depth);
+        const marker = blockType === "ordered_list" ? `${index + 1}. ` : blockType === "todo_list" ? `- [${normalized.checked ? "x" : " "}] ` : "- ";
+        const current = `${indent}${marker}${normalized.text}`;
+        const children = normalized.children.length ? renderStructuredListMarkdown(normalized.children, blockType, depth + 1) : "";
+        return [current, children].filter(Boolean).join("\n");
+      }).join("\n");
+    }
+
+    function contentMarkdownToHtml(source, marks = []) {
+      const blocks = normalizeMarkdownText(source).split(/\n{2,}/).filter(block => block.trim());
+      return blocks.map(block => {
+        if (/^```/.test(block.trim())) {
+          const lines = block.split("\n");
+          const language = lines[0].replace(/^```/, "").trim();
+          const code = lines.slice(1, lines.at(-1)?.trim() === "```" ? -1 : undefined).join("\n");
+          return `<pre data-language="${escapeHtml(language || "plaintext")}"><code>${escapeHtml(code)}</code></pre>`;
+        }
+        if (block.trim() === "---") return "<hr>";
+        if (/^>\s?/m.test(block)) {
+          return `<blockquote>${block.split("\n").map(line => renderInlineBlockLine(line.replace(/^>\s?/, ""), marks)).join("<br>")}</blockquote>`;
+        }
+        if (/^\s*[-*]\s+/m.test(block)) return nestedListMarkdownToHtml(block, "ul", marks);
+        if (/^\s*\d+[.)]\s+/m.test(block)) return nestedListMarkdownToHtml(block, "ol", marks);
+        if (/^\s*[-*]\s+\[[ x]\]\s+/im.test(block)) return nestedListMarkdownToHtml(block, "todo", marks);
+        return linesToBlockHtml(block, { blockType: "paragraph", marks });
+      }).join("");
+    }
+
+    function renderInlineBlockLine(line, marks = []) {
+      if (/^#\s+/.test(line)) return `<h1>${applyMarks(applyInlineMarkdown(line.replace(/^#\s+/, "")), marks)}</h1>`;
+      if (/^##\s+/.test(line)) return `<h2>${applyMarks(applyInlineMarkdown(line.replace(/^##\s+/, "")), marks)}</h2>`;
+      if (/^###\s+/.test(line)) return `<h3>${applyMarks(applyInlineMarkdown(line.replace(/^###\s+/, "")), marks)}</h3>`;
+      return applyMarks(applyInlineMarkdown(line), marks);
+    }
+
+    function nestedListMarkdownToHtml(block, listTag = "ul", marks = []) {
+      const lines = block.split("\n").filter(line => line.trim());
+      const root = { children: [] };
+      const stack = [{ depth: -1, node: root }];
+
+      lines.forEach((line, index) => {
+        const indent = (line.match(/^\s*/) || [""])[0].length;
+        const depth = Math.floor(indent / 2);
+        const isTodo = /^\s*[-*]\s+\[[ x]\]\s+/i.test(line);
+        const checked = /^\s*[-*]\s+\[x\]\s+/i.test(line);
+        const text = line
+          .replace(/^\s*[-*]\s+\[[ x]\]\s+/i, "")
+          .replace(/^\s*[-*]\s+/, "")
+          .replace(/^\s*\d+[.)]\s+/, "")
+          .trim();
+        const node = { text, children: [], checked, index };
+        while (stack.length > 1 && stack.at(-1).depth >= depth) stack.pop();
+        stack.at(-1).node.children.push(node);
+        stack.push({ depth, node });
+      });
+
+      const renderItems = (items, tag) => {
+        const actualTag = tag === "todo" ? "ul" : tag;
+        const attrs = tag === "todo" ? ` data-type="taskList"` : "";
+        return `<${actualTag}${attrs}>${items.map(item => {
+          const itemAttrs = tag === "todo" ? ` data-type="taskItem" data-checked="${item.checked ? "true" : "false"}"` : "";
+          const childHtml = item.children.length ? renderItems(item.children, tag) : "";
+          return `<li${itemAttrs}>${applyMarks(applyInlineMarkdown(item.text), marks)}${childHtml}</li>`;
+        }).join("")}</${actualTag}>`;
+      };
+
+      return renderItems(root.children, listTag);
     }
 
     function markdownToHtml(value, options = {}) {
@@ -5496,9 +5689,29 @@
         .replace(/`([^`]+)`/g, "$1");
     }
 
-    function insertHtmlAt(transaction, html, from, to = from) {
+    function sanitizeInsertionHtml(html) {
       const container = document.createElement("div");
       container.innerHTML = html;
+
+      container.querySelectorAll("[data-block-container], [data-block], [data-diff-preview], [data-diff-action], [data-diff-index], [data-diff-block-preview], [contenteditable]").forEach(node => {
+        node.removeAttribute("data-block-container");
+        node.removeAttribute("data-block");
+        node.removeAttribute("data-diff-preview");
+        node.removeAttribute("data-diff-action");
+        node.removeAttribute("data-diff-index");
+        node.removeAttribute("data-diff-block-preview");
+        node.removeAttribute("contenteditable");
+      });
+
+      container.querySelectorAll("p, li, blockquote, h1, h2, h3").forEach(block => {
+        if (!block.textContent.trim() && !block.querySelector("br")) block.remove();
+      });
+
+      return container;
+    }
+
+    function insertHtmlAt(transaction, html, from, to = from) {
+      const container = sanitizeInsertionHtml(html);
       const parser = ProseMirrorDOMParser.fromSchema(tiptapEditor.schema);
       const slice = parser.parseSlice(container, { preserveWhitespace: false });
       return transaction.replaceRange(from, to, slice);
@@ -5576,9 +5789,16 @@
         : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`;
 
       if (isAdd && isBlockPreview) {
-        token.querySelectorAll("p,h1,h2,h3,blockquote,pre").forEach(child => {
+        token.querySelectorAll("p,h1,h2,h3").forEach(child => {
           child.style.margin = "0";
           child.style.display = "inline";
+          child.style.color = "inherit";
+          child.style.fontSize = "inherit";
+          child.style.lineHeight = "inherit";
+        });
+
+        token.querySelectorAll("blockquote,pre").forEach(child => {
+          child.style.margin = "0";
           child.style.color = "inherit";
           child.style.fontSize = "inherit";
           child.style.lineHeight = "inherit";
@@ -5890,7 +6110,7 @@
 
       let transaction = tiptapEditor.state.tr;
       const ordered = [...edits]
-        .map(normalizeListEdit)
+        .map(edit => normalizeContentEdit(normalizeListEdit(edit)))
         .filter(edit => edit.docFrom != null)
         .sort((a, b) => b.docFrom - a.docFrom);
 
