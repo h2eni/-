@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.8.0.1</title>
+      <title>Lumon [ BETA ] v1.8.0.2</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2231,7 +2231,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.8.0.1].</h1>
+          <h1>Designing with edits, not guesses [v1.8.0.2].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2325,7 +2325,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.7.9</h2>
+        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.8.0.2</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2492,14 +2492,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "labs-leanstral-1-5-1";
-    const APP_VERSION = "1.8.0.1";
+    const APP_VERSION = "1.8.0.2";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_7_8";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_7_8";
+    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_8_0_2";
+    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_8_0_2";
     const WHATS_NEW_ITEMS = [
-      "Fixed /ai no-selection mode so the caret block becomes the edit scope.",
-      "Kept paragraph blocks and each list item counted as distinct AI-editable blocks.",
-      "Added exact block snapshots for AI planning without treating list wrappers as blocks.",
+      "Refined generated code blocks so fenced code becomes a real code block instead of inline text.",
+      "Preserved code block newlines, indentation, and language metadata during previews and insertion.",
+      "Improved structured content parsing so code blocks are detected before list-style syntax.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -3958,7 +3958,7 @@
 "For generated lists, use type: list with listType and items, for example { type: \"list\", target: \"current block text\", listType: \"bullet\", items: [\"List 1\", { \"text\": \"Nested parent\", \"children\": [\"Nested child\"] }] }. Each item must be a plain string or nested list item object without leading bullets or numbers.",
 "For mixed formatted insertions, use type: content with contentBlocks. contentBlocks can include paragraphs, headings, blockquotes, code blocks with language, dividers, and nested bullet/ordered/todo lists. Prefer contentBlocks over fragile Markdown blobs when generating multiple formatted block types.",
             "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
-            "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
+            "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. For code, use blockType: code_block or type: content with a contentBlocks item { type: \"code_block\", language, text }. Put only raw code in text; do not wrap it in Markdown fences unless using content text fallback. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
@@ -5490,6 +5490,16 @@ hideSlashMenu();
       return edit?.replacement ?? edit?.insertText ?? edit?.text ?? "";
     }
 
+    function parseCodeFence(value) {
+      const source = normalizeMarkdownText(value).trim();
+      const match = source.match(/^```([a-z0-9_+-]*)\n([\s\S]*?)\n```$/i);
+      if (!match) return null;
+      return {
+        language: match[1] || "plaintext",
+        code: match[2] || ""
+      };
+    }
+
     function normalizeBlockType(blockType = "paragraph") {
       const aliases = {
         h1: "heading_1",
@@ -5540,9 +5550,14 @@ hideSlashMenu();
       }
 
       if (normalizedBlockType === "code_block") {
-        const [code = "", ...paragraphParts] = source.split(/\n{3,}/);
+        const fenced = parseCodeFence(source);
+        const cleanSource = fenced ? fenced.code : source;
+        const languageAttr = fenced?.language && fenced.language !== "plaintext"
+          ? ` data-language="${escapeHtml(fenced.language)}" class="language-${escapeHtml(fenced.language)}"`
+          : "";
+        const [code = "", ...paragraphParts] = cleanSource.split(/\n{3,}/);
         const codeHtml = code.trimEnd()
-          ? `<pre><code>${escapeHtml(code.trimEnd())}</code></pre>`
+          ? `<pre${languageAttr}><code>${escapeHtml(code.trimEnd())}</code></pre>`
           : "";
         const paragraphHtml = paragraphParts
           .join("\n\n")
@@ -5612,21 +5627,40 @@ hideSlashMenu();
     }
 
     function contentMarkdownToHtml(source, marks = []) {
-      const blocks = normalizeMarkdownText(source).split(/\n{2,}/).filter(block => block.trim());
+      const blocks = [];
+      const normalizedSource = normalizeMarkdownText(source);
+      const fencedPattern = /```([a-z0-9_+-]*)\n[\s\S]*?\n```/gi;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = fencedPattern.exec(normalizedSource))) {
+        normalizedSource.slice(lastIndex, match.index)
+          .split(/\n{2,}/)
+          .filter(block => block.trim())
+          .forEach(block => blocks.push(block));
+        blocks.push(match[0]);
+        lastIndex = match.index + match[0].length;
+      }
+
+      normalizedSource.slice(lastIndex)
+        .split(/\n{2,}/)
+        .filter(block => block.trim())
+        .forEach(block => blocks.push(block));
+
       return blocks.map(block => {
-        if (/^```/.test(block.trim())) {
-          const lines = block.split("\n");
-          const language = lines[0].replace(/^```/, "").trim();
-          const code = lines.slice(1, lines.at(-1)?.trim() === "```" ? -1 : undefined).join("\n");
-          return `<pre data-language="${escapeHtml(language || "plaintext")}"><code>${escapeHtml(code)}</code></pre>`;
+        const fenced = parseCodeFence(block);
+        if (fenced) {
+          const language = fenced.language || "plaintext";
+          const languageClass = language !== "plaintext" ? ` class="language-${escapeHtml(language)}"` : "";
+          return `<pre data-language="${escapeHtml(language)}"${languageClass}><code>${escapeHtml(fenced.code)}</code></pre>`;
         }
         if (block.trim() === "---") return "<hr>";
         if (/^>\s?/m.test(block)) {
           return `<blockquote>${block.split("\n").map(line => renderInlineBlockLine(line.replace(/^>\s?/, ""), marks)).join("<br>")}</blockquote>`;
         }
+        if (/^\s*[-*]\s+\[[ x]\]\s+/im.test(block)) return nestedListMarkdownToHtml(block, "todo", marks);
         if (/^\s*[-*]\s+/m.test(block)) return nestedListMarkdownToHtml(block, "ul", marks);
         if (/^\s*\d+[.)]\s+/m.test(block)) return nestedListMarkdownToHtml(block, "ol", marks);
-        if (/^\s*[-*]\s+\[[ x]\]\s+/im.test(block)) return nestedListMarkdownToHtml(block, "todo", marks);
         return linesToBlockHtml(block, { blockType: "paragraph", marks });
       }).join("");
     }
@@ -5797,8 +5831,18 @@ hideSlashMenu();
           child.style.lineHeight = "inherit";
         });
 
-        token.querySelectorAll("blockquote,pre").forEach(child => {
+        token.querySelectorAll("blockquote").forEach(child => {
           child.style.margin = "0";
+          child.style.color = "inherit";
+          child.style.fontSize = "inherit";
+          child.style.lineHeight = "inherit";
+        });
+
+        token.querySelectorAll("pre").forEach(child => {
+          child.style.display = "block";
+          child.style.margin = "0";
+          child.style.whiteSpace = "pre";
+          child.style.overflowX = "auto";
           child.style.color = "inherit";
           child.style.fontSize = "inherit";
           child.style.lineHeight = "inherit";
