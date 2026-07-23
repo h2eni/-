@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Lumon [ BETA ] v1.8.0.2</title>
+<title>Lumon [ BETA ] v1.8.0.9</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -2231,7 +2231,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-          <h1>Designing with edits, not guesses [v1.8.0.2].</h1>
+<h1>Designing with edits, not guesses [v1.8.0.9].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2325,7 +2325,7 @@
   <div id="whatsNewBackdrop" class="whats-new-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
     <section class="whats-new-modal">
       <header class="whats-new-header">
-        <h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.8.0.2</h2>
+<h2 id="whatsNewTitle" class="whats-new-title">What’s New in v1.8.0.9</h2>
         <button id="whatsNewClose" class="whats-new-close" type="button" aria-label="Close what’s new">×</button>
       </header>
       <div id="whatsNewBody" class="whats-new-body"></div>
@@ -2492,14 +2492,14 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "labs-leanstral-1-5-1";
-    const APP_VERSION = "1.8.0.2";
+const APP_VERSION = "1.8.0.6";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-    const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_8_0_2";
-    const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_8_0_2";
+const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_8_0_6";
+const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_8_0_6";
     const WHATS_NEW_ITEMS = [
-      "Refined generated code blocks so fenced code becomes a real code block instead of inline text.",
-      "Preserved code block newlines, indentation, and language metadata during previews and insertion.",
-      "Improved structured content parsing so code blocks are detected before list-style syntax.",
+"Fixed accepted AI insertions so generated code becomes an actual code block, not inline fenced text.",
+"Improved AI block creation for headers, quote blocks, inline code marks, and code blocks.",
+"Preserved code whitespace and language metadata when applying generated blocks.",
       "Updated version-aware LocalStorage keys for this release."
     ];
     const CODE_LANGUAGE_OPTIONS = [
@@ -3954,11 +3954,11 @@
             "Never set the occurrence number to 0 when making changes, such as specifying occurrences.",
             "Preserve meaning unless the instruction asks for a transformation.",
             "Do not output HTML in edit fields.",
-            "For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, blockquote, code_block, divider.",
+"For block creation, set blockType instead of emitting literal HTML. Supported blockType values: paragraph, heading_1, heading_2, heading_3, bullet_list, ordered_list, todo_list, quote, blockquote, code_block, divider. If the user asks to create a header/heading, use heading_1, heading_2, or heading_3. If the user asks to create a quote block, use quote or blockquote. If the user asks for inline backtick/code formatting, use marks: [\"code\"]. If the user asks for a code block, use blockType: \"code_block\" or a contentBlocks item with type: \"code_block\".",
 "For generated lists, use type: list with listType and items, for example { type: \"list\", target: \"current block text\", listType: \"bullet\", items: [\"List 1\", { \"text\": \"Nested parent\", \"children\": [\"Nested child\"] }] }. Each item must be a plain string or nested list item object without leading bullets or numbers.",
 "For mixed formatted insertions, use type: content with contentBlocks. contentBlocks can include paragraphs, headings, blockquotes, code blocks with language, dividers, and nested bullet/ordered/todo lists. Prefer contentBlocks over fragile Markdown blobs when generating multiple formatted block types.",
             "For ordinary paragraph rewrites, omit blockType or use paragraph. Do not create a new visual line unless the user explicitly asks for a new line/block or the edit is a non-paragraph block such as a heading, quote, list, todo, or code block.",
-            "Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. For code, use blockType: code_block or type: content with a contentBlocks item { type: \"code_block\", language, text }. Put only raw code in text; do not wrap it in Markdown fences unless using content text fallback. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
+"Code block exception: newlines inside code_block content remain inside the same code block, not separate blocks. For code, use blockType: code_block or type: content with a contentBlocks item { type: \"code_block\", language, text }. Put only raw code in text; do not wrap it in Markdown fences unless using content text fallback. Accepted code output must create a real TipTap codeBlock node, not a paragraph containing backticks. To exit code after generated code, use three consecutive newlines, then the following text becomes a new paragraph block below the code.",
             "For inline styling, set marks instead of emitting literal HTML. Supported marks: bold, italic, underline, code.",
             "Markdown is allowed in replacement/text fields for readable intent, but the editor will convert it into proper TipTap blocks and marks.",
             "Do not wrap generated lines in literal <p>...</p> tags. Treat each generated non-code line as its own paragraph block in the editor output.",
@@ -5400,6 +5400,7 @@ hideSlashMenu();
         text,
         insertText: text,
         blockType: "content",
+contentBlocks: edit.contentBlocks || [],
         rationale: edit.rationale || "Generated structured formatted content."
       };
     }
@@ -5492,11 +5493,12 @@ hideSlashMenu();
 
     function parseCodeFence(value) {
       const source = normalizeMarkdownText(value).trim();
-      const match = source.match(/^```([a-z0-9_+-]*)\n([\s\S]*?)\n```$/i);
+let match = source.match(/^```([a-z0-9_+-]*)\n([\s\S]*?)\n```$/i);
+if (!match) match = source.match(/^```([a-z0-9_+-]*)([\s\S]*?)```$/i);
       if (!match) return null;
       return {
         language: match[1] || "plaintext",
-        code: match[2] || ""
+code: (match[2] || "").replace(/^\n/, "").replace(/\n$/, "")
       };
     }
 
@@ -5586,9 +5588,9 @@ hideSlashMenu();
       }
 
       return lines.map(line => {
-        if (normalizedBlockType === "heading_1" || /^#\s+/.test(line)) return `<h1>${renderInline(line.replace(/^#\s+/, ""))}</h1>`;
-        if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
         if (normalizedBlockType === "heading_3" || /^###\s+/.test(line)) return `<h3>${renderInline(line.replace(/^###\s+/, ""))}</h3>`;
+if (normalizedBlockType === "heading_2" || /^##\s+/.test(line)) return `<h2>${renderInline(line.replace(/^##\s+/, ""))}</h2>`;
+if (normalizedBlockType === "heading_1" || /^#\s+/.test(line)) return `<h1>${renderInline(line.replace(/^#\s+/, ""))}</h1>`;
         if (normalizedBlockType === "quote" || /^>\s+/.test(line)) return `<blockquote>${renderInline(line.replace(/^>\s+/, ""))}</blockquote>`;
         if (/^[-*]\s+/.test(line)) return `<ul><li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li></ul>`;
         if (/^\d+[.)]\s+/.test(line)) return `<ol><li>${renderInline(line.replace(/^\d+[.)]\s+/, ""))}</li></ol>`;
@@ -5747,7 +5749,7 @@ hideSlashMenu();
     function insertHtmlAt(transaction, html, from, to = from) {
       const container = sanitizeInsertionHtml(html);
       const parser = ProseMirrorDOMParser.fromSchema(tiptapEditor.schema);
-      const slice = parser.parseSlice(container, { preserveWhitespace: false });
+const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
       return transaction.replaceRange(from, to, slice);
     }
 
@@ -5800,14 +5802,14 @@ hideSlashMenu();
 
       // Additions render a compact Markdown preview, preserving line breaks,
       // headings, bold, italic, inline code, quotes, and list-like lines.
-      const token = document.createElement("span");
+      const token = document.createElement(isAdd && blockPreview ? "div" : "span");
 
       token.className = isAdd ? "diff-added" : "diff-removed";
       token.dataset.diffAction = action;
       token.dataset.diffIndex = String(diffIndex);
       token.dataset.diffPreview = "true";
       token.dataset.diffCodeSafe = codeSafe ? "true" : "false";
-      token.dataset.diffTag = "span";
+      token.dataset.diffTag = token.tagName.toLowerCase();
       token.setAttribute("contenteditable", "false");
       token.style.setProperty("--diff-steps", String(Math.max(1, previewText.length)));
 
@@ -5819,23 +5821,19 @@ hideSlashMenu();
       if (isBlockPreview) token.setAttribute("data-diff-block-preview", "true");
 
       token.style.cssText = isAdd
-        ? `display:${isBlockPreview ? "inline-block" : "inline"};vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:1px 3px;text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "pre-wrap"}!important;line-height:inherit!important;margin:0!important;`
+        ? `display:${isBlockPreview ? "block" : "inline"};vertical-align:baseline;color:rgba(39,131,222,1)!important;background-color:rgba(35,131,226,.1)!important;border:0!important;border-radius:4px;padding:${isBlockPreview ? "0" : "1px 3px"};text-decoration:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "pre-wrap"}!important;line-height:inherit!important;margin:0!important;`
         : `display:inline;color:#8a8f98!important;background:transparent!important;border:0!important;border-radius:0;padding:0 1px;text-decoration:line-through!important;text-decoration-thickness:2px!important;text-decoration-color:#8a8f98!important;text-decoration-skip-ink:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:pre-wrap!important;line-height:inherit!important;margin:0!important;`;
 
       if (isAdd && isBlockPreview) {
         token.querySelectorAll("p,h1,h2,h3").forEach(child => {
           child.style.margin = "0";
-          child.style.display = "inline";
+          child.style.display = "block";
           child.style.color = "inherit";
-          child.style.fontSize = "inherit";
-          child.style.lineHeight = "inherit";
         });
 
         token.querySelectorAll("blockquote").forEach(child => {
           child.style.margin = "0";
           child.style.color = "inherit";
-          child.style.fontSize = "inherit";
-          child.style.lineHeight = "inherit";
         });
 
         token.querySelectorAll("pre").forEach(child => {
@@ -5844,18 +5842,14 @@ hideSlashMenu();
           child.style.whiteSpace = "pre";
           child.style.overflowX = "auto";
           child.style.color = "inherit";
-          child.style.fontSize = "inherit";
-          child.style.lineHeight = "inherit";
         });
 
         token.querySelectorAll("ul,ol").forEach(child => {
           child.style.margin = "0";
           child.style.paddingLeft = "1.25em";
-          child.style.display = "inline-grid";
+          child.style.display = "grid";
           child.style.gap = "2px";
           child.style.color = "inherit";
-          child.style.fontSize = "inherit";
-          child.style.lineHeight = "inherit";
         });
 
         token.querySelectorAll("li").forEach(child => {
@@ -6028,6 +6022,7 @@ hideSlashMenu();
       const isListItemMatch = Boolean(match.node?.parentElement?.closest?.("li"));
       const isSlashCommandInsert = isSlashCommandText(target) && (type === "insert_before" || type === "insert_after");
       const isGeneratedListInsert = isListBlockType(blockType) && (type === "insert_before" || type === "insert_after" || isSlashCommandText(target));
+const isGeneratedBlockInsert = blockType && normalizeBlockType(blockType) !== "paragraph" && (type === "insert_before" || type === "insert_after" || isSlashCommandText(target));
       const hasExplicitNewLine = normalizeMarkdownText(addedText).includes("\n");
       const isInlineListRewrite =
         isListItemMatch &&
@@ -6065,7 +6060,7 @@ hideSlashMenu();
         decorations.push(
           Decoration.widget(widgetPos, () => {
             const token = createDiffToken("add", type === "replace" ? replacement : insertText, index, tokenOptions);
-            token.className = addClass;
+            token.className = shouldRenderBlockPreview ? "diff-added" : addClass;
             token.dataset.diffAction = "preview";
             token.dataset.diffBlockPreview = shouldRenderBlockPreview ? "true" : "false";
 
@@ -6086,7 +6081,7 @@ hideSlashMenu();
         marks,
         docFrom: match.docFrom,
         docTo: match.docFrom + target.length,
-        replaceTargetBlock: isSlashCommandInsert,
+        replaceTargetBlock: isSlashCommandInsert || Boolean(blockType && normalizeBlockType(blockType) !== "paragraph" && isSlashCommandText(target)),
         previewOnly: true
       });
 
