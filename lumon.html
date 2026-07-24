@@ -1814,14 +1814,10 @@
     }
 
     .editor pre.code-diff-anchor,
-    .editor .notion-code-block.code-diff-anchor,
-    .editor pre:has(.code-diff-remove, .code-diff-add),
-    .editor .notion-code-block:has(.code-diff-remove, .code-diff-add) {
-      background: rgba(35, 131, 226, 0.14) !important;
-      border-radius: 8px;
-      outline: 1px solid rgba(35, 131, 226, 0.18);
-      box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
-      transition: background 180ms ease, outline-color 180ms ease, box-shadow 180ms ease;
+    .editor .notion-code-block.code-diff-anchor {
+      outline: 1px solid rgba(35, 131, 226, 0.16);
+      outline-offset: 4px;
+      transition: outline-color 180ms ease;
     }
 
     .ProseMirror .code-diff-remove,
@@ -1846,10 +1842,23 @@
     }
 
     .ProseMirror .code-diff-add {
-      color: rgba(39, 131, 222, 1) !important;
-      background-color: rgba(35, 131, 226, 0.1) !important;
+      display: inline !important;
+      color: inherit !important;
+      background-color: rgba(35, 131, 226, 0.22) !important;
       border: 0 !important;
+      border-radius: 3px;
+      padding: 0 2px;
       text-decoration: none !important;
+      font: inherit !important;
+      font-size: inherit !important;
+      font-weight: inherit !important;
+      line-height: inherit !important;
+      letter-spacing: inherit !important;
+      white-space: inherit !important;
+      word-break: inherit;
+      overflow-wrap: inherit;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
     }
 
     .diff-preview-active {
@@ -1880,12 +1889,17 @@
       padding: 0 !important;
     }
 
-    .editor .ProseMirror blockquote:has(.diff-added[data-diff-block-preview="true"]),
-    .editor .ProseMirror pre:has(.diff-added[data-diff-block-preview="true"]),
-    .editor .ProseMirror .notion-code-block:has(.diff-added[data-diff-block-preview="true"]) {
+    .editor .ProseMirror blockquote:has(.diff-added[data-diff-block-preview="true"]) {
       background: rgba(35, 131, 226, 0.14) !important;
       outline: 1px solid rgba(35, 131, 226, 0.18);
       box-shadow: 0 0 0 6px rgba(35, 131, 226, 0.08);
+    }
+
+    .editor .ProseMirror pre:has(.diff-added[data-diff-block-preview="true"]),
+    .editor .ProseMirror .notion-code-block:has(.diff-added[data-diff-block-preview="true"]) {
+      background: #111 !important;
+      outline: none;
+      box-shadow: none;
     }
 
     .whats-new-backdrop {
@@ -6133,7 +6147,7 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
       const codeBlock = getCodeBlockElement(match.node);
       const decorations = [];
       const removeClass = match.inCodeBlock ? "code-diff-remove" : "diff-removed";
-      const addClass = match.inCodeBlock ? "code-diff-add" : "diff-added";
+      const addClass = "diff-added";
       const addedText = type === "replace" ? replacement : insertText;
       const normalizedBlockType = normalizeBlockType(blockType);
       const isListItemMatch = Boolean(match.node?.parentElement?.closest?.("li"));
