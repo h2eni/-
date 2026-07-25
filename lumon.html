@@ -530,6 +530,9 @@
       overflow-y: visible;
       white-space: pre;
       overscroll-behavior-inline: contain;
+      height: auto;
+      min-height: calc(1.55em + 62px);
+      contain: none;
       -webkit-overflow-scrolling: touch;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 14px;
@@ -539,15 +542,19 @@
 
     .editor pre code,
     .editor .notion-code-block code {
-      display: block;
-      width: max-content;
+      display: inline-block;
+      width: auto;
       min-width: 100%;
+      max-width: none;
       padding: 0;
       border: 0;
       background: transparent;
       color: inherit;
       font-size: inherit;
       white-space: pre;
+      overflow: visible;
+      vertical-align: top;
+      tab-size: 2;
     }
 
     .code-block-actions {
@@ -1878,6 +1885,7 @@
     .editor[data-ai-scope-mode="selection"] .ProseMirror li:has(.diff-added, .diff-removed, .code-diff-preview),
     .editor .ProseMirror .diff-added[data-diff-block-preview="true"] > :is(p, h1, h2, h3, blockquote),
     .editor .ProseMirror .diff-added[data-diff-block-preview="true"] li,
+    .editor .ProseMirror .pending-preview-block[data-diff-block-preview="true"] > :is(p, h1, h2, h3, blockquote, pre, ul, ol),
     .editor .ProseMirror .code-diff-preview {
       background: rgba(35, 131, 226, 0.08);
       border-radius: 6px;
@@ -1891,6 +1899,40 @@
       border: 0 !important;
       box-shadow: none !important;
       padding: 0 !important;
+    }
+
+    .editor .ProseMirror .pending-preview-block[data-diff-block-preview="true"] {
+      display: block !important;
+      width: 100%;
+      margin: 0;
+      pointer-events: auto;
+      user-select: text;
+      clear: both;
+    }
+
+    .editor .ProseMirror .pending-preview-block[data-detached-preview-block="true"] {
+      display: block !important;
+      position: relative;
+      width: 100%;
+      margin: 0;
+    }
+
+    .editor .ProseMirror .slash-preview-replaced-block {
+      opacity: 0.72;
+      background: rgba(35, 131, 226, 0.08);
+      border-radius: 6px;
+      outline: 1px solid rgba(35, 131, 226, 0.16);
+      box-shadow: 0 0 0 4px rgba(35, 131, 226, 0.055);
+      text-decoration-line: line-through;
+      text-decoration-thickness: 1.5px;
+      text-decoration-color: currentColor;
+      text-decoration-skip-ink: auto;
+      transition: background 120ms ease, outline-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .editor .ProseMirror .pending-preview-block[data-diff-block-preview="true"] > :is(p, h1, h2, h3, blockquote, pre, ul, ol) {
+      width: 100%;
+      pointer-events: none;
     }
 
     .editor .ProseMirror blockquote:has(.diff-added[data-diff-block-preview="true"]) {
@@ -2264,7 +2306,7 @@
         </div>
 
         <article id="editor" class="editor" spellcheck="true">
-<h1>Designing with edits, not guesses [v1.8.1.0].</h1>
+<h1>Designing with edits, not guesses [v1.9.0.0].</h1>
 
           <p>
             This editor treats AI suggestions as a stack of deliberate changes.
@@ -2525,10 +2567,10 @@
     const DEFAULT_MISTRAL_API_KEY = "iE0ZAydz1MQSlVGmP7LkVhNemWCdFIJf";
     const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
     const MISTRAL_MODEL = "labs-leanstral-1-5-1";
-const APP_VERSION = "1.8.1.0";
+const APP_VERSION = "1.9";
     const APP_VERSION_LABEL = `v${APP_VERSION}`;
-const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_8_1_0";
-const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_8_1_0";
+const APP_VERSION_STORAGE_KEY = "lumon_seen_version_v1_9_0_0";
+const APP_SCRIPT_STORAGE_KEY = "lumon_saved_scripts_v1_9_0_0";
     const WHATS_NEW_ITEMS = [
 "Upgraded multi-edit planning with explicit block contracts for headings, quotes, lists, dividers, and fenced code.",
 "Added language-aware code block handling for HTML, Lua, SQL, Bash, Python, JavaScript, TypeScript, CSS, JSON, and plaintext.",
@@ -3436,7 +3478,7 @@ required: ["type"]
       if (isTouchDevice() || !getProseMirrorRoot()) return null;
 
       const previewNodes = Array.from(
-        getProseMirrorRoot().querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor")
+        getProseMirrorRoot().querySelectorAll(".pending-preview-block[data-diff-block-preview='true'], .diff-added, .diff-removed, .code-diff-anchor")
       ).filter(node => node.getBoundingClientRect().width || node.getBoundingClientRect().height);
 
       return previewNodes[0]?.getBoundingClientRect() || null;
@@ -3446,7 +3488,7 @@ required: ["type"]
       if (!getProseMirrorRoot()) return null;
 
       const previewNodes = Array.from(
-        getProseMirrorRoot().querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
+        getProseMirrorRoot().querySelectorAll(".pending-preview-block[data-diff-block-preview='true'], .diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
       ).filter(node => node.getBoundingClientRect().width || node.getBoundingClientRect().height);
 
       if (!previewNodes.length) return null;
@@ -4563,11 +4605,11 @@ required: ["type"]
 
       const { selectedText, selectedHtml, scopeLabel, isContinuation } = getPromptScope(instruction);
 
-      // if (!selectedText) {
-      //   aiDock?.classList.add("show");
-      //   showToast("There is no document text to edit yet.");
-      //   return;
-      // }
+      if (!selectedText) {
+        aiDock?.classList.add("show");
+        showToast("There is no document text to edit yet.");
+        return;
+      }
 
       isAiStreaming = true;
       sendBtn.disabled = false;
@@ -4944,7 +4986,7 @@ required: ["type"]
     });
 
     function getBlockSelector() {
-      return ".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror li, .ProseMirror > blockquote, .ProseMirror > pre";
+      return ".ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3, .ProseMirror > p, .ProseMirror li, .ProseMirror > blockquote, .ProseMirror > pre, .ProseMirror > .pending-preview-block[data-diff-block-preview='true']";
     }
 
     function getEditorBlocks() {
@@ -4954,6 +4996,9 @@ required: ["type"]
     function getCaretBlock() {
       const selection = window.getSelection();
       if (!selection?.rangeCount || !editor.contains(selection.anchorNode)) return null;
+
+      const pendingBlock = getProseMirrorRoot()?.querySelector?.(".pending-preview-block[data-diff-block-preview='true']");
+      if (pendingBlock && activeDiffs.length) return pendingBlock;
 
       const node =
         selection.anchorNode.nodeType === Node.TEXT_NODE
@@ -6086,7 +6131,12 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
 
       const isBlockPreview = blockPreview || token.dataset.diffBlockPreview === "true";
       token.dataset.diffBlockPreview = isBlockPreview ? "true" : "false";
-      if (isBlockPreview) token.setAttribute("data-diff-block-preview", "true");
+      if (isBlockPreview) {
+        token.setAttribute("data-diff-block-preview", "true");
+        token.dataset.blockContainer = "true";
+        token.dataset.pendingBlock = "true";
+        token.setAttribute("aria-label", "Pending AI block preview");
+      }
 
       token.style.cssText = isAdd
         ? `display:${isBlockPreview ? "block" : "inline"};vertical-align:baseline;color:inherit!important;background-color:${highlight ? "rgba(35,131,226,.22)" : "transparent"}!important;border:0!important;border-radius:${highlight ? "3px" : "0"};padding:${highlight ? (isBlockPreview ? "0" : "0 2px") : "0"};box-shadow:${highlight ? "inherit" : "none"}!important;text-decoration:none!important;font:inherit!important;font-size:inherit!important;font-weight:inherit!important;line-height:inherit!important;letter-spacing:inherit!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;white-space:${isBlockPreview ? "normal" : "inherit"}!important;margin:0!important;`
@@ -6094,19 +6144,16 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
 
       if (isAdd && isBlockPreview) {
         token.querySelectorAll("p,h1,h2,h3").forEach(child => {
-          child.style.margin = "0";
           child.style.display = "block";
           child.style.color = "inherit";
         });
 
         token.querySelectorAll("blockquote").forEach(child => {
-          child.style.margin = "0";
           child.style.color = "inherit";
         });
 
         token.querySelectorAll("pre").forEach(child => {
           child.style.display = "block";
-          child.style.margin = "0";
           child.style.whiteSpace = "pre";
           child.style.overflowX = "auto";
           child.style.color = "inherit";
@@ -6209,6 +6256,12 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
 
     function getPreviewHighlightBlock(node) {
       const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      const pendingPreview = element?.closest?.(".pending-preview-block[data-diff-block-preview='true']");
+      if (pendingPreview) {
+        const childBlock = element.closest?.("li, h1, h2, h3, p, blockquote, pre, .notion-code-block");
+        return childBlock && pendingPreview.contains(childBlock) ? childBlock : null;
+      }
+
       const listItem = element?.closest?.("li");
       if (listItem && editor.contains(listItem)) return listItem;
 
@@ -6221,6 +6274,15 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
     function getPreviewHighlightBlocks(node) {
       const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
       if (!element) return [];
+      const pendingPreview = element.matches?.(".pending-preview-block[data-diff-block-preview='true']")
+        ? element
+        : element.closest?.(".pending-preview-block[data-diff-block-preview='true']");
+
+      if (pendingPreview) {
+        return Array.from(
+          pendingPreview.querySelectorAll?.("li, h1, h2, h3, p, blockquote, pre, .notion-code-block") || []
+        ).filter(block => editor.contains(block));
+      }
 
       const innerBlocks = Array.from(
         element.querySelectorAll?.("li, h1, h2, h3, p, blockquote, pre, .notion-code-block") || []
@@ -6245,7 +6307,7 @@ const slice = parser.parseSlice(container, { preserveWhitespace: "full" });
       clearPreviewHighlightBlocks();
 
       root
-        .querySelectorAll(".diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
+        .querySelectorAll(".pending-preview-block[data-diff-block-preview='true'], .diff-added, .diff-removed, .code-diff-anchor, .code-diff-preview")
         .forEach(node => {
           getPreviewHighlightBlocks(node).forEach(block => {
             block.setAttribute("data-diff-highlight-block", "true");
@@ -6312,8 +6374,20 @@ const isGeneratedBlockInsert = blockType && normalizeBlockType(blockType) !== "p
         : applyMarks(applyInlineMarkdown(markdownToPlainText(addedText)), marks);
       const removesTextFromBlock = type === "replace" || type === "remove" || isSlashCommandInsert;
 const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml, blockPreview: shouldRenderBlockPreview, highlight: removesTextFromBlock };
+      const blockRange = shouldRenderBlockPreview ? getBlockRangeAtDocPos(match.docFrom) : null;
+      const replaceWholeBlockPreview = Boolean(isSlashCommandInsert && shouldRenderBlockPreview && blockRange);
 
-      if (type === "replace" || type === "remove") {
+      if (replaceWholeBlockPreview) {
+        decorations.push(
+          Decoration.node(blockRange.from, blockRange.to, {
+            class: "slash-preview-replaced-block",
+            "data-diff-action": "preview",
+            "data-diff-index": String(index),
+            "data-diff-preview": "true",
+            "data-diff-block": "block"
+          })
+        );
+      } else if (type === "replace" || type === "remove" || isSlashCommandInsert) {
         decorations.push(
           Decoration.inline(match.docFrom, match.docFrom + target.length, {
             class: removeClass,
@@ -6326,16 +6400,35 @@ const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml, blockPrevie
       }
 
       if (type === "replace" || type === "insert_before" || type === "insert_after") {
-        const widgetPos = type === "insert_before" ? match.docFrom : match.docFrom + target.length;
+        const widgetPos = replaceWholeBlockPreview
+          ? blockRange.from
+          : shouldRenderBlockPreview && type === "insert_before"
+          ? blockRange?.from ?? match.docFrom
+          : shouldRenderBlockPreview && type === "insert_after"
+          ? blockRange?.to ?? match.docFrom + target.length
+          : type === "insert_before"
+          ? match.docFrom
+          : match.docFrom + target.length;
+        const widgetSide = replaceWholeBlockPreview
+          ? -1
+          : shouldRenderBlockPreview
+          ? type === "insert_before" ? -1 : 1
+          : type === "insert_before" ? -1 : 1;
         decorations.push(
           Decoration.widget(widgetPos, () => {
             const token = createDiffToken("add", type === "replace" ? replacement : insertText, index, tokenOptions);
-            token.className = shouldRenderBlockPreview ? "diff-added" : addClass;
+            token.className = shouldRenderBlockPreview ? "diff-added pending-preview-block" : addClass;
             token.dataset.diffAction = "preview";
             token.dataset.diffBlockPreview = shouldRenderBlockPreview ? "true" : "false";
+            if (shouldRenderBlockPreview) {
+              token.dataset.blockContainer = "true";
+              token.dataset.pendingBlock = "true";
+              token.dataset.detachedPreviewBlock = replaceWholeBlockPreview ? "true" : "false";
+              token.setAttribute("aria-label", "Pending AI block preview");
+            }
 
             return token;
-          }, { side: type === "insert_before" ? -1 : 1 })
+          }, { side: widgetSide })
         );
       }
 
@@ -6362,6 +6455,11 @@ const tokenOptions = { codeSafe: match.inCodeBlock, html: addedHtml, blockPrevie
     function refreshPreviewDecorations() {
       const decorations = activeDiffs.flatMap(edit => edit.decorations || []);
       setCodeDiffDecorations(decorations);
+      requestAnimationFrame(() => {
+        syncPreviewHighlightBlocks();
+        updateBlockToolsFromCaret();
+        positionAIModal();
+      });
     }
 
     function createDiffPreview({ type, target, replacement = "", insertText = "", blockType, marks = [], language, occurrence = 1, index = 0 }) {
